@@ -1,0 +1,28 @@
+{
+  "app": "Bhavesh",
+  "version": "1.0.0",
+  "file": "bhavesh-1.0.0.apk",
+  "size": 44290088,
+  "sha256": "4532881cfb9519afc4be668e680f6b42133750f1a044df891ef91dbfe39bf53c",
+  "part_size": 20000000,
+  "parts": [
+    {
+      "index": 1,
+      "name": "bhavesh-1.0.0.part-001.bin",
+      "size": 20000000,
+      "sha256": "b90236d123dc0537d1716421d3e621a9c8f9d70ea49548108eecb15c05bca324"
+    },
+    {
+      "index": 2,
+      "name": "bhavesh-1.0.0.part-002.bin",
+      "size": 20000000,
+      "sha256": "262018a37bab7caf14ddd2962fb34673048239515beafd5eedfaa3894b5e52cf"
+    },
+    {
+      "index": 3,
+      "name": "bhavesh-1.0.0.part-003.bin",
+      "size": 4290088,
+      "sha256": "37b05de08264633e866f4ccb9a0acb5736c4c7f3c8ffaf25aa887e3d92d2a71c"
+    }
+  ]
+}

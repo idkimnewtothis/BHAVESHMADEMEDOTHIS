@@ -9,7 +9,7 @@ Independent Android anime app derived from ShonenX, licensed under GPL-3.0.
 
 ## Install on your phone
 
-Use the assets in the [1.0.0 release](https://github.com/idkimnewtothis/BHAVESHMADEMEDOTHIS/releases/tag/v1.0.0).
+GitHub publishing is blocked by Git authentication, so the requested fallback assets are committed under [dist/1.0.0](dist/1.0.0/). The coding task also provides direct downloads of the joiner, three parts and manifest. No GitHub release URL is claimed.
 
 1. Download apk-joiner.html, every part, and the manifest.
 2. Open apk-joiner.html from Downloads in your browser.
