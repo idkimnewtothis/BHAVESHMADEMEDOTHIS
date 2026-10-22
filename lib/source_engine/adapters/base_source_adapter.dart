@@ -1,0 +1,319 @@
+import 'dart:async';
+import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart'
+    as bridge;
+import 'package:shonenx/core/utils/app_logger.dart';
+import 'package:shonenx/shared/models/unified_media.dart';
+import 'package:shonenx/source_engine/models/source_info.dart';
+import 'package:shonenx/source_engine/models/source_setting.dart';
+import 'package:shonenx/source_engine/providers/media_source.dart';
+import 'package:shonenx/source_engine/utils/parsers.dart';
+
+abstract class BaseSourceAdapter implements MediaSource {
+  @override
+  final SourceInfo sourceInfo;
+  final bridge.Source source;
+
+  BaseSourceAdapter({required this.sourceInfo, required this.source});
+
+  ScopedLogger get log;
+
+  MediaType get mediaType => sourceInfo.mediaType;
+
+  final Map<String, bridge.SourcePreference> _preferencesCache = {};
+
+  @override
+  Future<List<SourceSetting>> getSettingsSchema() async {
+    final methodLog = log.child('getSettingsSchema');
+    try {
+      final schema = await source.methods.getPreference();
+      _preferencesCache.clear();
+      final List<SourceSetting> settings = [];
+
+      for (final pref in schema) {
+        if (pref.key == null || pref.type == null) continue;
+        _preferencesCache[pref.key!] = pref;
+
+        try {
+          if (pref.type == 'switch' || pref.type == 'checkbox') {
+            final title =
+                pref.switchPreferenceCompat?.title ??
+                pref.checkBoxPreference?.title ??
+                pref.key!;
+            final description =
+                pref.switchPreferenceCompat?.summary ??
+                pref.checkBoxPreference?.summary ??
+                '';
+            final defaultValue =
+                pref.switchPreferenceCompat?.value ??
+                pref.checkBoxPreference?.value ??
+                false;
+
+            settings.add(
+              SourceSetting(
+                id: pref.key!,
+                name: title,
+                description: description,
+                type: SettingType.boolean,
+                defaultValue: defaultValue,
+              ),
+            );
+          } else if (pref.type == 'list') {
+            final listPref = pref.listPreference;
+            final options = listPref?.entryValues ?? listPref?.entries ?? [];
+
+            settings.add(
+              SourceSetting(
+                id: pref.key!,
+                name: listPref?.title ?? pref.key!,
+                description: listPref?.summary ?? '',
+                type: SettingType.select,
+                defaultValue:
+                    listPref?.value ??
+                    (options.isNotEmpty ? options.first : ''),
+                options: options,
+              ),
+            );
+          } else if (pref.type == 'multi_select') {
+            final multiPref = pref.multiSelectListPreference;
+            final options = multiPref?.entryValues ?? multiPref?.entries ?? [];
+
+            settings.add(
+              SourceSetting(
+                id: pref.key!,
+                name: multiPref?.title ?? pref.key!,
+                description: multiPref?.summary ?? '',
+                type: SettingType.multiSelect,
+                defaultValue: multiPref?.values ?? [],
+                options: options,
+              ),
+            );
+          } else if (pref.type == 'text') {
+            final textPref = pref.editTextPreference;
+            settings.add(
+              SourceSetting(
+                id: pref.key!,
+                name: textPref?.title ?? pref.key!,
+                description: textPref?.summary ?? '',
+                type: SettingType.text,
+                defaultValue: textPref?.value ?? '',
+              ),
+            );
+          } else {
+            methodLog.w(
+              '[${sourceInfo.name}] Unsupported setting type: ${pref.type}',
+            );
+          }
+        } catch (e) {
+          methodLog.e(
+            '[${sourceInfo.name}] Failed to parse setting ${pref.key}',
+            e,
+          );
+        }
+      }
+
+      return settings;
+    } catch (e, st) {
+      methodLog.e(
+        '[${sourceInfo.name}] Failed to fetch settings schema',
+        e,
+        st,
+      );
+      return [];
+    }
+  }
+
+  Future<bool> saveSetting(String settingId, dynamic value) async {
+    final methodLog = log.child('saveSetting');
+    try {
+      bridge.SourcePreference? pref = _preferencesCache[settingId];
+      if (pref == null) {
+        final schema = await source.methods.getPreference();
+        for (final p in schema) {
+          if (p.key != null) {
+            _preferencesCache[p.key!] = p;
+          }
+        }
+        pref = _preferencesCache[settingId];
+      }
+
+      final targetPref = pref ?? bridge.SourcePreference(key: settingId);
+
+      if (targetPref.type == 'checkbox' ||
+          targetPref.checkBoxPreference != null) {
+        targetPref.checkBoxPreference?.value = value is bool
+            ? value
+            : (value.toString().toLowerCase() == 'true');
+      } else if (targetPref.type == 'switch' ||
+          targetPref.switchPreferenceCompat != null) {
+        targetPref.switchPreferenceCompat?.value = value is bool
+            ? value
+            : (value.toString().toLowerCase() == 'true');
+      } else if (targetPref.type == 'list' ||
+          targetPref.listPreference != null) {
+        targetPref.listPreference?.value = value?.toString();
+        final entryValues = targetPref.listPreference?.entryValues;
+        if (entryValues != null) {
+          final idx = entryValues.indexOf(value?.toString() ?? '');
+          if (idx != -1) targetPref.listPreference?.valueIndex = idx;
+        }
+      } else if (targetPref.type == 'multi_select' ||
+          targetPref.multiSelectListPreference != null) {
+        final list = value is List
+            ? value.map((e) => e.toString()).toList()
+            : <String>[];
+        targetPref.multiSelectListPreference?.values = list;
+      } else if (targetPref.type == 'text' ||
+          targetPref.editTextPreference != null) {
+        targetPref.editTextPreference?.value = value?.toString();
+      }
+
+      methodLog.i(
+        '[${sourceInfo.name}] Saving setting $settingId to source ${sourceInfo.id}',
+      );
+      final success = await source.methods.setPreference(targetPref, value);
+      return success;
+    } catch (e, st) {
+      methodLog.e(
+        '[${sourceInfo.name}] Failed to save setting $settingId',
+        e,
+        st,
+      );
+      return false;
+    }
+  }
+
+  @override
+  Future<List<UnifiedMedia>> search(
+    String query,
+    MediaType type, {
+    int page = 1,
+    bool isAdult = false,
+    List<String> sort = const ['SEARCH_MATCH'],
+    List<String> genres = const [],
+    List<String> tags = const [],
+    bool forceRefresh = false,
+  }) async {
+    final methodLog = log.child('search');
+    try {
+      final extraDetails = [
+        if (genres.isNotEmpty) 'genres=$genres',
+        if (tags.isNotEmpty) 'tags=$tags',
+      ];
+      final extraStr = extraDetails.isNotEmpty
+          ? ' (${extraDetails.join(', ')})'
+          : '';
+      methodLog.i('[${sourceInfo.name}] query="$query" page=$page$extraStr');
+      final results = await source.methods.search(query, page, [
+        ...genres,
+        ...tags,
+      ]);
+      methodLog.d('[${sourceInfo.name}] results=${results.list.length}');
+
+      final parsed = results.list
+          .map(
+            (e) => UnifiedMedia(
+              id: '${e.url!}|${e.title!}',
+              type: mediaType,
+              sourceId: sourceInfo.id,
+              sourceName: sourceInfo.name,
+              providerId: e.url!,
+              url: e.url,
+              title: MediaTitle(english: e.title),
+              cover: e.cover,
+              description: e.description,
+            ),
+          )
+          .toList();
+
+      return parsed;
+    } catch (e, st) {
+      methodLog.e('[${sourceInfo.name}] search failed', e, st);
+      return [];
+    }
+  }
+
+  @override
+  Future<List<UnifiedMedia>> getTrending({int page = 1}) async {
+    final methodLog = log.child('getTrending');
+    try {
+      methodLog.i('[${sourceInfo.name}] page=$page');
+      bridge.Pages results = await source.methods.getPopular(page);
+      if (results.list.isEmpty) {
+        results = await source.methods.getLatestUpdates(page);
+      }
+      methodLog.d('[${sourceInfo.name}] results=${results.list.length}');
+
+      final list = results.list
+          .map(
+            (e) => UnifiedMedia(
+              id: '${e.url!}|${e.title!}',
+              type: mediaType,
+              sourceId: sourceInfo.id,
+              sourceName: sourceInfo.name,
+              providerId: e.url!,
+              url: e.url,
+              title: MediaTitle(english: e.title),
+              cover: e.cover,
+              description: e.description,
+            ),
+          )
+          .toList();
+
+      if (list.isNotEmpty) {
+        return list;
+      }
+      methodLog.i(
+        '[${sourceInfo.name}] getTrending returned empty, falling back to search("")',
+      );
+      return await search('', mediaType, page: page);
+    } catch (e, st) {
+      methodLog.e(
+        '[${sourceInfo.name}] getTrending failed, falling back to search("")',
+        e,
+        st,
+      );
+      try {
+        return await search('', mediaType, page: page);
+      } catch (_) {
+        return [];
+      }
+    }
+  }
+
+  Future<bridge.DMedia> getRawDetail(String providerId) async {
+    final parts = providerId.split('|');
+    final detail = await source.methods.getDetail(
+      bridge.DMedia(url: parts[0], title: parts.length > 1 ? parts[1] : ''),
+    );
+    return detail;
+  }
+
+  @override
+  Future<UnifiedMedia> getDetails(String providerId, MediaType type) async {
+    final methodLog = log.child('getDetails');
+    try {
+      final detail = await getRawDetail(providerId);
+
+      final extraInfo = detail.toMediaInfo();
+
+      final parts = providerId.split('|');
+      final parsed = UnifiedMedia(
+        id: providerId,
+        type: mediaType,
+        idMal: extraInfo?.malId?.toString(),
+        sourceId: sourceInfo.id,
+        sourceName: sourceInfo.name,
+        providerId: parts[0],
+        url: parts[0],
+        title: MediaTitle(english: detail.title),
+        cover: detail.cover,
+        description: detail.description,
+        genres: detail.genre,
+      );
+      return parsed;
+    } catch (e, st) {
+      methodLog.e('[${sourceInfo.name}] getDetails failed', e, st);
+      throw Exception('[${sourceInfo.name}] Failed to get details');
+    }
+  }
+}

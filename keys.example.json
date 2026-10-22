@@ -1,0 +1,7 @@
+{
+    "ANILIST_CLIENT_ID": "mobile|desktop",
+    "ANILIST_CLIENT_SECRET": "mobile|desktop",
+    "MAL_CLIENT_ID": "mobile|desktop",
+    "MAL_CLIENT_SECRET": "mobile|desktop",
+    "COMMENTUM_API_URL": ""
+}

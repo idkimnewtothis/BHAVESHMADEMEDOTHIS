@@ -1,0 +1,755 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_discord_rpc_fork/flutter_discord_rpc.dart';
+import 'package:http/http.dart' as http;
+import 'package:shonenx/core/utils/app_logger.dart';
+import 'package:shonenx/shared/models/unified_media.dart';
+
+/// Manages Discord presence across Desktop IPC and Gateway WebSocket.
+class DiscordRpcService {
+  static const String applicationId = '1519961030078234666';
+  static const String _appIconUrl =
+      'https://raw.githubusercontent.com/roshancodespace/ShonenX/refs/heads/main/assets/images/app_icon.png';
+
+  final _log = AppLogger.scope(DiscordRpcService);
+  final _desktop = _DesktopRpc();
+  late final _gateway = _GatewayConnection(
+    token: () => _token,
+    onReady: _onGatewayReady,
+  );
+
+  String? _token;
+  RPCActivity? _lastDesktopActivity;
+  Map<String, dynamic>? _lastGatewayPayload;
+  int? _browsingStartMs;
+  int? _mediaStartMs;
+  final Map<String, String> _imageAssetCache = {};
+
+  bool get isDesktopPlatform =>
+      !kIsWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows);
+
+  bool get isConnected =>
+      _gateway.isConnected || (isDesktopPlatform && _desktop.isConnected);
+
+  Map<String, dynamic>? get lastPresencePayload => _lastGatewayPayload;
+
+  // ---------------------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------------------
+
+  Future<void> connect([String? token, bool force = false]) async {
+    _token = token ?? _token;
+
+    if (isDesktopPlatform) {
+      try {
+        await _desktop.init(applicationId);
+        await _desktop.connect(force: force);
+        if (_desktop.isConnected && _lastDesktopActivity != null) {
+          _desktop.setActivity(_lastDesktopActivity!);
+        }
+      } catch (e) {
+        _log.d('Desktop RPC connect skipped: $e');
+      }
+    }
+
+    if (_token != null && _token!.isNotEmpty) {
+      try {
+        await _gateway.connect();
+      } catch (e) {
+        _log.d('Gateway connect skipped: $e');
+      }
+    }
+  }
+
+  Future<void> disconnect() async {
+    _log.i('Disconnecting Discord RPC');
+    try {
+      _desktop.disconnect();
+    } catch (_) {}
+    try {
+      await _gateway.disconnect();
+    } catch (_) {}
+  }
+
+  // ---------------------------------------------------------------------------
+  // Presence
+  // ---------------------------------------------------------------------------
+
+  /// Updates presence for anime playback (watching or paused).
+  Future<void> updateAnimePresence({
+    required UnifiedMedia anime,
+    required int episodeNumber,
+    String? episodeTitle,
+    int? positionMs,
+    int? durationMs,
+    int? timeStampMs,
+    int? totalEpisodes,
+    bool isPlaying = true,
+    bool showEpisodeNumber = true,
+    bool showProgress = true,
+    bool showMediaImage = true,
+    bool showButtons = true,
+  }) async {
+    _resetTimestamps(media: true);
+
+    final pos = positionMs ?? timeStampMs ?? 0;
+    final dur = durationMs ?? 0;
+    final title = anime.title.getPreferedTitle;
+    final epCount = totalEpisodes != null ? '/$totalEpisodes' : '';
+    final epLabel = showEpisodeNumber
+        ? 'Episode $episodeNumber$epCount'
+        : 'Watching';
+
+    final stateParts = <String>[];
+    if (showEpisodeNumber) stateParts.add(epLabel);
+    if (episodeTitle != null) stateParts.add(episodeTitle);
+
+    final baseStateText = _joinNonEmpty(
+      stateParts.isEmpty ? [epLabel] : stateParts,
+    );
+    final progressText = (showProgress && !isPlaying)
+        ? _progressText(pos, dur)
+        : null;
+
+    final stateText = isPlaying
+        ? baseStateText
+        : '${_joinNonEmpty([baseStateText, progressText])} (Paused)';
+
+    final coverUrl = showMediaImage ? (anime.cover ?? anime.banner) : null;
+    final mediaUrl = anime.url ?? 'https://anilist.co/anime/${anime.id}';
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    int? startMs;
+    int? endMs;
+
+    if (isPlaying && showProgress) {
+      startMs = pos > 0 ? now - pos : now;
+      endMs = (dur > 0 && pos > 0 && dur > pos) ? startMs + dur : null;
+
+      // Deduplicate timestamp jitter to avoid spamming updates for the same state
+      final lastStart = _lastDesktopActivity?.timestamps?.start;
+      if (lastStart != null &&
+          _lastDesktopActivity?.details == title &&
+          (lastStart - startMs).abs() < 2500) {
+        startMs = lastStart;
+        if (endMs != null) {
+          endMs = startMs + dur;
+        }
+      }
+    }
+
+    _log.i('Anime presence: $title ($stateText)');
+
+    await _dispatch(
+      desktop: RPCActivity(
+        activityType: ActivityType.watching,
+        details: title,
+        state: stateText,
+        timestamps: startMs != null
+            ? RPCTimestamps(start: startMs, end: endMs)
+            : null,
+        assets: RPCAssets(
+          largeImage: coverUrl ?? _appIconUrl,
+          largeText: title,
+          smallImage: _appIconUrl,
+          smallText: 'ShonenX',
+        ),
+        buttons: showButtons
+            ? [RPCButton(label: 'View Anime', url: mediaUrl)]
+            : [],
+      ),
+      gateway: _gatewayPresence(
+        name: title,
+        type: 3, // Watching
+        details: title,
+        state: stateText,
+        timestamps: {
+          if (isPlaying && startMs != null) 'start': startMs,
+          if (isPlaying && endMs != null) 'end': endMs,
+        },
+        coverUrl: coverUrl,
+        largeText: title,
+        buttonLabel: showButtons ? 'View Anime' : null,
+        buttonUrl: showButtons ? mediaUrl : null,
+      ),
+    );
+  }
+
+  /// Updates presence for paused anime playback.
+  Future<void> updateAnimePresencePaused({
+    required UnifiedMedia anime,
+    required int episodeNumber,
+    int? positionMs,
+    int? durationMs,
+    int? timeStampMs,
+  }) => updateAnimePresence(
+    anime: anime,
+    episodeNumber: episodeNumber,
+    positionMs: positionMs ?? timeStampMs,
+    durationMs: durationMs,
+    isPlaying: false,
+  );
+
+  Future<void> updateMangaPresence({
+    required UnifiedMedia manga,
+    int? chapterNumber,
+    String? chapterTitle,
+    int? currentPage,
+    int? totalPages,
+    int? totalChapters,
+    bool showEpisodeNumber = true,
+    bool showProgress = true,
+    bool showMediaImage = true,
+    bool showButtons = true,
+  }) async {
+    _mediaStartMs ??= DateTime.now().millisecondsSinceEpoch;
+    _browsingStartMs = null;
+
+    final title = manga.title.getPreferedTitle;
+    final chTotal = totalChapters != null ? '/$totalChapters' : '';
+    final chLabel = (chapterNumber != null && showEpisodeNumber)
+        ? 'Chapter $chapterNumber$chTotal'
+        : 'Reading';
+
+    final pageLabel =
+        (currentPage != null && totalPages != null && showProgress)
+        ? 'Page $currentPage/$totalPages'
+        : null;
+
+    final stateParts = <String>[];
+    if (showEpisodeNumber || chapterNumber == null) stateParts.add(chLabel);
+    if (chapterTitle != null) stateParts.add(chapterTitle);
+    if (pageLabel != null) stateParts.add(pageLabel);
+
+    final stateText = _joinNonEmpty(
+      stateParts.isEmpty ? ['Reading'] : stateParts,
+    );
+
+    final coverUrl = showMediaImage ? (manga.cover ?? manga.banner) : null;
+    final mediaUrl = manga.url ?? 'https://anilist.co/manga/${manga.id}';
+
+    _log.i('Manga presence: $title ($stateText)');
+
+    await _dispatch(
+      desktop: RPCActivity(
+        activityType: ActivityType.listening,
+        details: title,
+        state: stateText,
+        timestamps: RPCTimestamps(start: _mediaStartMs),
+        assets: RPCAssets(
+          largeImage: coverUrl ?? _appIconUrl,
+          largeText: title,
+          smallImage: _appIconUrl,
+          smallText: 'ShonenX',
+        ),
+        buttons: showButtons
+            ? [RPCButton(label: 'View Manga', url: mediaUrl)]
+            : [],
+      ),
+      gateway: _gatewayPresence(
+        name: title,
+        type: 0,
+        details: title,
+        state: stateText,
+        timestamps: {'start': _mediaStartMs},
+        coverUrl: coverUrl,
+        largeText: title,
+        buttonLabel: showButtons ? 'View Manga' : null,
+        buttonUrl: showButtons ? mediaUrl : null,
+      ),
+    );
+  }
+
+  /// Updates presence when viewing media details.
+  Future<void> updateMediaPresence({
+    required UnifiedMedia media,
+    bool showMediaImage = true,
+    bool showButtons = true,
+  }) async {
+    _mediaStartMs = DateTime.now().millisecondsSinceEpoch;
+    _browsingStartMs = null;
+
+    final title = media.title.getPreferedTitle;
+    final typeStr = media.type == MediaType.MANGA ? 'Manga' : 'Anime';
+    final coverUrl = showMediaImage ? (media.cover ?? media.banner) : null;
+    final mediaUrl =
+        media.url ??
+        'https://anilist.co/${media.type.name.toLowerCase()}/${media.id}';
+    final stateText = 'Viewing $typeStr Details';
+
+    _log.i('Media presence: $title');
+
+    await _dispatch(
+      desktop: RPCActivity(
+        details: title,
+        state: stateText,
+        timestamps: RPCTimestamps(start: _mediaStartMs),
+        assets: RPCAssets(
+          largeImage: coverUrl ?? _appIconUrl,
+          largeText: title,
+          smallImage: _appIconUrl,
+          smallText: 'ShonenX',
+        ),
+        buttons: showButtons
+            ? [RPCButton(label: 'View $typeStr', url: mediaUrl)]
+            : [],
+      ),
+      gateway: _gatewayPresence(
+        name: title,
+        type: 0,
+        details: title,
+        state: stateText,
+        timestamps: {'start': _mediaStartMs},
+        coverUrl: coverUrl,
+        largeText: title,
+        buttonLabel: showButtons ? 'View $typeStr' : null,
+        buttonUrl: showButtons ? mediaUrl : null,
+      ),
+    );
+  }
+
+  /// Updates presence when browsing catalog or idle.
+  Future<void> updateBrowsingPresence({
+    String? activity,
+    String? details,
+  }) async {
+    _browsingStartMs ??= DateTime.now().millisecondsSinceEpoch;
+    _mediaStartMs = null;
+
+    final primary = activity ?? 'Browsing Catalog';
+    final secondary = details ?? 'Exploring Anime & Manga';
+
+    _log.i('Browsing presence: $primary');
+
+    await _dispatch(
+      desktop: RPCActivity(
+        details: primary,
+        state: secondary,
+        timestamps: RPCTimestamps(start: _browsingStartMs),
+        assets: const RPCAssets(largeImage: _appIconUrl, largeText: 'ShonenX'),
+      ),
+      gateway: _gatewayPresence(
+        name: 'ShonenX',
+        type: 0,
+        details: primary,
+        state: secondary,
+        timestamps: {'start': _browsingStartMs},
+      ),
+    );
+  }
+
+  /// Clears active presence on all platforms.
+  Future<void> clearPresence() async {
+    _log.i('Clearing presence');
+    resetPresenceState();
+    try {
+      _desktop.clearActivity();
+    } catch (_) {}
+    if (_gateway.isConnected) {
+      try {
+        _gateway.sendPresenceUpdate({'activities': [], 'status': 'online'});
+      } catch (_) {}
+    }
+  }
+
+  /// Resets cached presence state without dispatching updates.
+  void resetPresenceState() {
+    _lastGatewayPayload = null;
+    _lastDesktopActivity = null;
+    _mediaStartMs = null;
+    _browsingStartMs = null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  void _resetTimestamps({bool media = false}) {
+    if (media) {
+      _browsingStartMs = null;
+      _mediaStartMs = null;
+    }
+  }
+
+  void _onGatewayReady() {
+    if (_lastGatewayPayload != null) {
+      _gateway.send(_lastGatewayPayload!);
+    } else {
+      updateBrowsingPresence();
+    }
+  }
+
+  Future<void> _dispatch({
+    required RPCActivity desktop,
+    required Future<Map<String, dynamic>> gateway,
+  }) async {
+    // Deduplicate Desktop IPC updates
+    if (isDesktopPlatform && _desktop.isConnected) {
+      if (_lastDesktopActivity?.state != desktop.state ||
+          _lastDesktopActivity?.details != desktop.details ||
+          _lastDesktopActivity?.timestamps?.start !=
+              desktop.timestamps?.start ||
+          _lastDesktopActivity?.timestamps?.end != desktop.timestamps?.end ||
+          _lastDesktopActivity?.assets?.largeImage !=
+              desktop.assets?.largeImage) {
+        _lastDesktopActivity = desktop;
+        try {
+          _desktop.setActivity(desktop);
+        } catch (_) {}
+      }
+    } else {
+      _lastDesktopActivity = desktop;
+    }
+
+    // Deduplicate Gateway WebSocket updates
+    if (_gateway.isConnected) {
+      try {
+        final payload = await gateway;
+        final payloadJson = jsonEncode(payload);
+        final lastPayloadJson = _lastGatewayPayload != null
+            ? jsonEncode(_lastGatewayPayload)
+            : null;
+
+        if (payloadJson != lastPayloadJson) {
+          _lastGatewayPayload = payload;
+          _gateway.send(payload);
+        }
+      } catch (_) {}
+    } else {
+      try {
+        _lastGatewayPayload = await gateway;
+      } catch (_) {}
+    }
+  }
+
+  Future<Map<String, dynamic>> _gatewayPresence({
+    required String name,
+    required int type,
+    required String details,
+    required String state,
+    required Map<String, dynamic> timestamps,
+    String? coverUrl,
+    String? largeText,
+    String? buttonLabel,
+    String? buttonUrl,
+  }) async {
+    final assets = <String, dynamic>{
+      'large_image': await _resolveAsset(coverUrl ?? _appIconUrl),
+      'large_text': largeText ?? 'ShonenX',
+      'small_image': await _resolveAsset(_appIconUrl),
+      'small_text': 'ShonenX',
+    };
+
+    if (coverUrl == null) {
+      assets.remove('small_image');
+      assets.remove('small_text');
+    }
+
+    final activity = <String, dynamic>{
+      'application_id': applicationId,
+      'name': name,
+      'type': type,
+      'details': details,
+      'state': state,
+      'timestamps': timestamps,
+      'assets': assets,
+    };
+
+    if (buttonLabel != null && buttonUrl != null) {
+      activity['buttons'] = [buttonLabel];
+      activity['metadata'] = {
+        'button_urls': [buttonUrl],
+      };
+    }
+
+    return {
+      'op': 3,
+      'd': {
+        'since': null,
+        'activities': [activity],
+        'status': 'online',
+        'afk': false,
+      },
+    };
+  }
+
+  Future<String> _resolveAsset(String? url) async {
+    if (url == null || url.isEmpty || _token == null || _token!.isEmpty) {
+      return 'app_icon';
+    }
+    final cached = _imageAssetCache[url];
+    if (cached != null) return cached;
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse(
+              'https://discord.com/api/v9/applications/$applicationId/external-assets',
+            ),
+            headers: {
+              'Authorization': _token!,
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'urls': [url],
+            }),
+          )
+          .timeout(const Duration(seconds: 3));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as List;
+        if (data.isNotEmpty && data[0]['external_asset_path'] != null) {
+          final path = 'mp:${data[0]['external_asset_path']}';
+          _imageAssetCache[url] = path;
+          return path;
+        }
+      }
+    } catch (_) {
+      // Fall back to default app icon if resolution fails.
+    }
+
+    return 'app_icon';
+  }
+
+  String _joinNonEmpty(List<String?> parts) =>
+      parts.where((p) => p != null && p.isNotEmpty).join(' • ');
+
+  String? _progressText(int posMs, int durMs) {
+    if (posMs <= 0 || durMs <= 0) return null;
+    return '${_fmtDuration(Duration(milliseconds: posMs))} / '
+        '${_fmtDuration(Duration(milliseconds: durMs))}';
+  }
+
+  String _fmtDuration(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return h > 0 ? '${h.toString().padLeft(2, '0')}:$m:$s' : '$m:$s';
+  }
+}
+
+/// Desktop IPC wrapper around FlutterDiscordRPC.
+class _DesktopRpc {
+  final _log = AppLogger.scope(_DesktopRpc);
+  bool _initialized = false;
+  bool _connected = false;
+  DateTime? _lastConnectAttempt;
+  static const Duration _retryCooldown = Duration(seconds: 30);
+
+  bool get isInitialized => _initialized;
+  bool get isConnected => _connected;
+
+  Future<void> init(String appId) async {
+    if (_initialized) return;
+    try {
+      await FlutterDiscordRPC.initialize(appId);
+      _initialized = true;
+      _log.s('Desktop IPC initialized');
+    } catch (e, s) {
+      _log.e('Failed to init Desktop IPC:', e, s);
+    }
+  }
+
+  Future<void> connect({bool force = false}) async {
+    if (!_initialized) return;
+    if (_connected) return;
+
+    final now = DateTime.now();
+    if (!force &&
+        _lastConnectAttempt != null &&
+        now.difference(_lastConnectAttempt!) < _retryCooldown) {
+      return;
+    }
+    _lastConnectAttempt = now;
+
+    try {
+      await FlutterDiscordRPC.instance.connect();
+      _connected = true;
+      _log.s('Desktop IPC connected');
+    } catch (e, s) {
+      _connected = false;
+      _log.e('Desktop IPC connect skipped (Discord client not running):', e, s);
+    }
+  }
+
+  void setActivity(RPCActivity activity) {
+    if (!_initialized || !_connected) return;
+    try {
+      FlutterDiscordRPC.instance.setActivity(activity: activity);
+    } catch (e, s) {
+      _log.e('Failed to set desktop activity:', e, s);
+      _connected = false;
+    }
+  }
+
+  void clearActivity() {
+    if (!_initialized || !_connected) return;
+    try {
+      FlutterDiscordRPC.instance.clearActivity();
+    } catch (e) {
+      _log.d('Failed to clear desktop activity: $e');
+      _connected = false;
+    }
+  }
+
+  void disconnect() {
+    if (!_initialized || !_connected) return;
+    try {
+      FlutterDiscordRPC.instance.disconnect();
+    } catch (e, s) {
+      _log.e('Desktop IPC disconnect failed:', e, s);
+    } finally {
+      _connected = false;
+    }
+  }
+}
+
+/// Manages the Discord Gateway WebSocket connection and heartbeat.
+class _GatewayConnection {
+  static const String _gatewayUrl =
+      'wss://gateway.discord.gg/?v=10&encoding=json';
+
+  final _log = AppLogger.scope(_GatewayConnection);
+  final String? Function() token;
+  final VoidCallback onReady;
+
+  _GatewayConnection({required this.token, required this.onReady});
+
+  WebSocket? _socket;
+  Timer? _heartbeatTimer;
+  int? _heartbeatInterval;
+  int? _seq;
+  bool _ackReceived = true;
+  bool _connected = false;
+  bool _connecting = false;
+
+  bool get isConnected => _connected;
+
+  Future<void> connect() async {
+    if (_connecting) return;
+    _connecting = true;
+
+    try {
+      await _close();
+      _socket = await WebSocket.connect(_gatewayUrl);
+      _socket!.listen(
+        _onMessage,
+        onError: (e) {
+          _log.e('Gateway socket error', e);
+          _connected = false;
+        },
+        onDone: () {
+          _log.w('Gateway connection closed');
+          _connected = false;
+          _heartbeatTimer?.cancel();
+        },
+      );
+    } catch (e, s) {
+      _log.e('Failed to connect Gateway', e, s);
+    } finally {
+      _connecting = false;
+    }
+  }
+
+  Future<void> disconnect() async {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    _seq = null;
+    _connected = false;
+    await _close();
+  }
+
+  void send(Map<String, dynamic> payload) {
+    try {
+      _socket?.add(jsonEncode(payload));
+    } catch (e, s) {
+      _log.e('Failed to send Gateway payload', e, s);
+      _connected = false;
+    }
+  }
+
+  void sendPresenceUpdate(Map<String, dynamic> presenceData) {
+    send({
+      'op': 3,
+      'd': {'since': null, 'afk': false, ...presenceData},
+    });
+  }
+
+  void _onMessage(dynamic raw) {
+    try {
+      final data = jsonDecode(raw as String);
+      final op = data['op'] as int?;
+      _seq = data['s'] as int? ?? _seq;
+
+      switch (op) {
+        case 10: // HELLO
+          _heartbeatInterval = data['d']['heartbeat_interval'] as int?;
+          _ackReceived = true;
+          _identify();
+          _startHeartbeat();
+          break;
+        case 0: // DISPATCH
+          if (data['t'] == 'READY') {
+            _connected = true;
+            _log.s('Gateway READY');
+            onReady();
+          }
+          break;
+        case 11: // HEARTBEAT ACK
+          _ackReceived = true;
+          break;
+      }
+    } catch (e, s) {
+      _log.e('Error handling Gateway message', e, s);
+    }
+  }
+
+  void _identify() {
+    final t = token();
+    if (t == null || t.isEmpty) return;
+    send({
+      'op': 2,
+      'd': {
+        'token': t,
+        'properties': {
+          '\$os': Platform.operatingSystem,
+          '\$browser': 'ShonenX',
+          '\$device': 'ShonenX Client',
+        },
+        'presence': {'status': 'online', 'afk': false},
+      },
+    });
+  }
+
+  void _startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    final interval = _heartbeatInterval;
+    if (interval == null) return;
+    _heartbeatTimer = Timer.periodic(
+      Duration(milliseconds: interval),
+      (_) => _sendHeartbeat(),
+    );
+  }
+
+  void _sendHeartbeat() {
+    if (!_ackReceived) {
+      _log.w('Heartbeat ACK missed, reconnecting');
+      connect();
+      return;
+    }
+    _ackReceived = false;
+    send({'op': 1, 'd': _seq});
+  }
+
+  Future<void> _close() async {
+    try {
+      await _socket?.close();
+    } catch (_) {
+      // Socket may already be closed.
+    }
+    _socket = null;
+  }
+}

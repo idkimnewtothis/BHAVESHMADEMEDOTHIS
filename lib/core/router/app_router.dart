@@ -1,0 +1,507 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shonenx/app_init.dart';
+import 'package:shonenx/core/router/complex_extra_codec.dart';
+import 'package:shonenx/core/router/scaffold_with_nav_bar.dart';
+import 'package:shonenx/features/discovery/domain/models/search_filter_options.dart';
+import 'package:shonenx/features/discovery/presentation/details_screen.dart';
+import 'package:shonenx/features/onboarding/onboarding_screen.dart';
+import 'package:shonenx/features/discovery/presentation/home_screen.dart';
+import 'package:shonenx/features/settings/presentation/discord_settings_screen.dart';
+import 'package:shonenx/features/splash/presentation/splash_screen.dart';
+import 'package:shonenx/features/calendar/presentation/calendar_screen.dart';
+import 'package:shonenx/features/discovery/presentation/discover_screen.dart';
+import 'package:shonenx/features/downloads/presentation/downloads_screen.dart';
+import 'package:shonenx/features/extensions/presentation/extensions_settings_screen.dart';
+import 'package:shonenx/features/extensions/presentation/extension_tester_screen.dart';
+import 'package:shonenx/core/remote_config/ui/remote_config_editor_screen.dart';
+import 'package:shonenx/features/history/presentation/continue_history_screen.dart';
+import 'package:shonenx/features/library/presentation/library_screen.dart';
+import 'package:shonenx/features/player/domain/player_mode.dart';
+import 'package:shonenx/features/player/presentation/player_screen.dart';
+import 'package:shonenx/features/reader/domain/reader_mode.dart';
+import 'package:shonenx/features/reader/presentation/reader_screen.dart';
+import 'package:shonenx/features/settings/presentation/cache_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/download_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/home_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/permissions_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/player_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/reader_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/theme_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/tracking_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/ui_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/backup_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/import_preview_screen.dart';
+import 'package:shonenx/features/settings/presentation/debug_settings_screen.dart';
+import "package:shonenx/features/notifications/presentation/notifications_settings_screen.dart";
+import 'package:shonenx/features/settings/presentation/content_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/logs_screen.dart';
+import 'package:shonenx/features/settings/presentation/about_screen.dart';
+import 'package:shonenx/features/settings/presentation/security_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/update_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/troubleshoot_settings_screen.dart';
+import 'package:shonenx/features/settings/presentation/subtitle_debug_screen.dart';
+import 'package:shonenx/features/settings/presentation/tracker_bio_debug_screen.dart';
+import 'package:shonenx/core/services/backup_service.dart';
+import 'package:shonenx/shared/models/unified_media.dart';
+
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+final _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'home');
+final _libraryNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'library');
+final _searchNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'search');
+final _downloadsNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'downloads',
+);
+
+final startupUriProvider = Provider<Uri?>((ref) => null);
+
+final routerProvider = Provider<GoRouter>((ref) {
+  final startupUri = ref.watch(startupUriProvider);
+
+  return GoRouter(
+    navigatorKey: rootNavigatorKey,
+    initialLocation: startupUri?.toString() ?? '/splash',
+    debugLogDiagnostics: kDebugMode,
+    extraCodec: const ComplexExtraCodec(),
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(child: Text('Route not found: ${state.uri.toString()}')),
+    ),
+    redirect: (context, state) {
+      final uri = state.uri;
+      final scheme = uri.scheme.toLowerCase();
+      final host = uri.host.toLowerCase();
+
+      if (((scheme == 'aniyomi' ||
+                  scheme == 'tachiyomi' ||
+                  scheme == 'mangayomi' ||
+                  scheme.contains('cloudstream') ||
+                  scheme == 'kotatsu' ||
+                  scheme == 'sora' ||
+                  scheme == 'shonenx') &&
+              (host == 'add-repo' ||
+                  host == 'add-repository' ||
+                  scheme == 'cloudstreamrepo' ||
+                  uri.queryParameters.containsKey('url'))) ||
+          uri.path.contains('add-repo')) {
+        String? url = uri.queryParameters['url'];
+        String? managerId;
+        String? type;
+
+        if (scheme == 'aniyomi') {
+          managerId = 'aniyomi';
+          type = 'anime';
+        } else if (scheme == 'tachiyomi') {
+          managerId = 'aniyomi';
+          type = 'manga';
+        } else if (scheme == 'mangayomi') {
+          managerId = 'mangayomi';
+        } else if (scheme.contains('cloudstream')) {
+          managerId = 'cloudstream';
+          if (url == null &&
+              host.isNotEmpty &&
+              host != 'add-repo' &&
+              host != 'add-repository') {
+            url = uri.toString().replaceFirst(
+              RegExp(
+                r'^cloudstreamrepo://|^cloudstream://',
+                caseSensitive: false,
+              ),
+              '',
+            );
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+              url = 'https://$url';
+            }
+          }
+        } else if (scheme == 'kotatsu') {
+          managerId = 'kotatsu';
+          type = 'manga';
+        } else if (scheme == 'sora') {
+          managerId = 'sora';
+          type = 'novel';
+        } else if (scheme == 'shonenx' && host == 'add-repo') {
+          managerId = uri.queryParameters['manager'] ?? 'aniyomi';
+          type = uri.queryParameters['type'];
+        }
+
+        final targetUri = Uri(
+          path: '/settings/extensions',
+          queryParameters: {
+            if (url != null && url.isNotEmpty && url != '()') 'autoAddUrl': url,
+            if (managerId != null) 'autoAddManager': managerId,
+            if (type != null) 'autoAddType': type,
+          },
+        );
+        final target = targetUri.toString();
+
+        if (!AppInit.isBridgeInitialized) {
+          AppInit.pendingDeepLink = target;
+          return '/splash';
+        }
+        AppInit.pendingDeepLink = target;
+        return '/home';
+      }
+      return null;
+    },
+    routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return ScaffoldWithNavBar(navigationShell: navigationShell);
+        },
+        branches: [
+          StatefulShellBranch(
+            navigatorKey: _homeNavigatorKey,
+            routes: [
+              GoRoute(path: '/home', builder: (context, state) => HomeScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _searchNavigatorKey,
+            routes: [
+              GoRoute(
+                path: '/discover',
+                builder: (context, state) {
+                  final query = state.uri.queryParameters['query'];
+                  final source = state.uri.queryParameters['source'];
+                  final type = MediaType.values.firstWhere(
+                    (e) => e.id == state.uri.queryParameters['type'],
+                    orElse: () => MediaType.ANIME,
+                  );
+                  final genres =
+                      state.uri.queryParametersAll['genres']
+                          ?.expand((e) => e.split(','))
+                          .map((e) => e.trim())
+                          .where((e) => e.isNotEmpty)
+                          .toList() ??
+                      [];
+                  final tags =
+                      state.uri.queryParametersAll['tags']
+                          ?.expand((e) => e.split(','))
+                          .map((e) => e.trim())
+                          .where((e) => e.isNotEmpty)
+                          .toList() ??
+                      [];
+                  final category = state.uri.queryParameters['category'];
+                  final sortParam = SearchSort.tryFromId(
+                    state.uri.queryParameters['sort'],
+                  );
+                  final statusParam = SearchStatusFilter.tryFromId(
+                    state.uri.queryParameters['status'],
+                  );
+                  final formatParam = SearchFormatFilter.tryFromId(
+                    state.uri.queryParameters['format'],
+                  );
+
+                  return DiscoverScreen(
+                    key: ValueKey(state.uri.toString()),
+                    initialQuery: query,
+                    category: category,
+                    type: type,
+                    initialGenres: genres,
+                    initialTags: tags,
+                    source: source,
+                    customTitle: state.uri.queryParameters['title'],
+                    initialSort: sortParam,
+                    initialStatus: statusParam,
+                    initialFormat: formatParam,
+                  );
+                },
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _libraryNavigatorKey,
+            routes: [
+              GoRoute(
+                path: '/library',
+                builder: (context, state) => const LibraryScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _downloadsNavigatorKey,
+            routes: [
+              GoRoute(
+                path: '/downloads',
+                builder: (context, state) => const DownloadsScreen(),
+              ),
+            ],
+          ),
+        ],
+      ),
+
+      GoRoute(
+        path: '/filtered_discover',
+        builder: (context, state) {
+          final query = state.uri.queryParameters['query'];
+          final source = state.uri.queryParameters['source'];
+          final type = MediaType.values.firstWhere(
+            (e) => e.id == state.uri.queryParameters['type'],
+            orElse: () => MediaType.ANIME,
+          );
+          final genres =
+              state.uri.queryParametersAll['genres']
+                  ?.expand((e) => e.split(','))
+                  .map((e) => e.trim())
+                  .where((e) => e.isNotEmpty)
+                  .toList() ??
+              [];
+          final tags =
+              state.uri.queryParametersAll['tags']
+                  ?.expand((e) => e.split(','))
+                  .map((e) => e.trim())
+                  .where((e) => e.isNotEmpty)
+                  .toList() ??
+              [];
+          final category = state.uri.queryParameters['category'];
+          final sortParam = SearchSort.tryFromId(
+            state.uri.queryParameters['sort'],
+          );
+          final statusParam = SearchStatusFilter.tryFromId(
+            state.uri.queryParameters['status'],
+          );
+          final formatParam = SearchFormatFilter.tryFromId(
+            state.uri.queryParameters['format'],
+          );
+
+          return DiscoverScreen(
+            key: ValueKey(state.uri.toString()),
+            initialQuery: query,
+            category: category,
+            type: type,
+            initialGenres: genres,
+            initialTags: tags,
+            source: source,
+            customTitle: state.uri.queryParameters['title'],
+            initialSort: sortParam,
+            initialStatus: statusParam,
+            initialFormat: formatParam,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/details/:mediaType',
+        builder: (context, state) {
+          final mediaType = MediaType.values.firstWhere(
+            (e) => e.id == state.pathParameters['mediaType'],
+          );
+          final tag = state.uri.queryParameters['tag'];
+
+          UnifiedMedia media;
+          int initialTabIndex = 0;
+          Object? autoPlayMode;
+
+          if (state.extra is Map) {
+            final map = state.extra as Map;
+            media = map['media'] as UnifiedMedia;
+            initialTabIndex = (map['initialTabIndex'] as int?) ?? 0;
+            autoPlayMode = map['autoPlayMode'];
+          } else {
+            media = state.extra as UnifiedMedia;
+          }
+
+          return DetailsScreen(
+            media: media,
+            mediaType: mediaType,
+            tag: tag ?? 'details',
+            initialTabIndex: initialTabIndex,
+            autoPlayMode: autoPlayMode,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/player',
+        builder: (context, state) {
+          final mode = state.extra as PlayerMode;
+          return PlayerScreen(mode: mode);
+        },
+      ),
+      GoRoute(
+        path: '/reader',
+        builder: (context, state) {
+          final mode = state.extra as ReaderModeOnline;
+          return ReaderScreen(key: ValueKey(mode.episode.id), mode: mode);
+        },
+      ),
+      GoRoute(
+        path: '/calendar',
+        builder: (context, state) => const CalendarScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+        routes: [
+          GoRoute(
+            path: 'discord',
+            builder: (context, state) => const DiscordSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'downloads',
+            builder: (context, state) => const DownloadSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'permissions',
+            builder: (context, state) => const PermissionsSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'notifications',
+            builder: (context, state) => const NotificationsSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'tracking',
+            builder: (context, state) => const TrackingSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'extensions',
+            builder: (context, state) {
+              final autoAddUrl = state.uri.queryParameters['autoAddUrl'];
+              final autoAddType = state.uri.queryParameters['autoAddType'];
+              final autoAddManager =
+                  state.uri.queryParameters['autoAddManager'];
+              return ExtensionsSettingsScreen(
+                autoAddUrl: autoAddUrl,
+                autoAddType: autoAddType,
+                autoAddManager: autoAddManager,
+              );
+            },
+            routes: [
+              GoRoute(
+                path: 'test',
+                builder: (context, state) => const ExtensionTesterScreen(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'remote_config_editor',
+            builder: (context, state) => const RemoteConfigEditorScreen(),
+          ),
+          GoRoute(
+            path: 'content',
+            builder: (context, state) => const ContentSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'theme',
+            builder: (context, state) => const ThemeSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'home',
+            builder: (context, state) => const HomeSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'player',
+            builder: (context, state) => const PlayerSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'reader',
+            builder: (context, state) => const ReaderSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'cache',
+            builder: (context, state) => const CacheSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'ui',
+            builder: (context, state) => const UiSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'backup',
+            builder: (context, state) => const BackupSettingsScreen(),
+            routes: [
+              GoRoute(
+                path: 'preview',
+                builder: (context, state) {
+                  final manifest = state.extra as BackupManifest;
+                  return ImportPreviewScreen(manifest: manifest);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'troubleshoot',
+            builder: (context, state) => const TroubleshootSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'debug',
+            builder: (context, state) => const DebugSettingsScreen(),
+            routes: [
+              GoRoute(
+                path: 'subtitles',
+                builder: (context, state) => const SubtitleDebugScreen(),
+              ),
+              GoRoute(
+                path: 'tracker-bio',
+                builder: (context, state) => const TrackerBioDebugScreen(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'logs',
+            builder: (context, state) => const LogsScreen(),
+          ),
+          GoRoute(
+            path: 'updates',
+            builder: (context, state) => const UpdateSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'about',
+            builder: (context, state) => const AboutScreen(),
+          ),
+          GoRoute(
+            path: 'security',
+            builder: (context, state) => const SecuritySettingsScreen(),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/category/:name',
+        builder: (context, state) {
+          final rawName = state.pathParameters['name'] ?? '';
+          final category = Uri.decodeComponent(rawName);
+          final type = MediaType.values.firstWhere(
+            (e) => e.id == state.uri.queryParameters['type'],
+            orElse: () => MediaType.ANIME,
+          );
+
+          return DiscoverScreen(type: type, category: category);
+        },
+      ),
+      GoRoute(
+        path: '/continue/:mediaType',
+        builder: (context, state) {
+          final mediaType = MediaType.values.firstWhere(
+            (e) => e.id == state.pathParameters['mediaType'],
+            orElse: () => MediaType.ANIME,
+          );
+          return ContinueHistoryScreen(type: mediaType);
+        },
+        routes: [
+          GoRoute(
+            path: ':mediaId',
+            builder: (context, state) {
+              final mediaType = MediaType.values.firstWhere(
+                (e) => e.id == state.pathParameters['mediaType'],
+                orElse: () => MediaType.ANIME,
+              );
+              final rawId = state.pathParameters['mediaId']!;
+              final mediaId = Uri.decodeComponent(rawId);
+              return ContinueHistoryItemsScreen(
+                type: mediaType,
+                mediaId: mediaId,
+              );
+            },
+          ),
+        ],
+      ),
+    ],
+  );
+});

@@ -1,0 +1,763 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:shonenx/app_init.dart';
+import 'package:shonenx/core/router/app_navigator.dart';
+import 'package:shonenx/features/extensions/providers/extension_service_provider.dart';
+import 'package:shonenx/features/extensions/providers/extensions_provider.dart';
+import 'package:shonenx/features/settings/presentation/widgets/settings_ui_components.dart';
+import 'package:shonenx/shared/models/unified_media.dart';
+import 'package:shonenx/shared/providers/theme_prefs_provider.dart';
+import 'package:shonenx/shared/widgets/app_bottom_sheet.dart';
+import 'package:shonenx/shared/widgets/app_scaffold.dart';
+import 'package:shonenx/source_engine/source_registry.dart';
+
+import 'widgets/extension_guide_sheet.dart';
+import 'widgets/manage_repos_sheet.dart';
+import 'widgets/runtime_setup_sheet.dart';
+import 'widgets/sources_tab.dart';
+import 'package:shonenx/shared/widgets/unified_search_bar.dart';
+
+class ExtensionsSettingsScreen extends ConsumerStatefulWidget {
+  final String? autoAddUrl;
+  final String? autoAddType;
+  final String? autoAddManager;
+
+  const ExtensionsSettingsScreen({
+    super.key,
+    this.autoAddUrl,
+    this.autoAddType,
+    this.autoAddManager,
+  });
+
+  @override
+  ConsumerState<ExtensionsSettingsScreen> createState() =>
+      _ExtensionsSettingsScreenState();
+}
+
+class _ExtensionsSettingsScreenState
+    extends ConsumerState<ExtensionsSettingsScreen> {
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedLangFilter = 'All';
+  String _selectedEngineFilter = 'All';
+  bool _isInstalledMode = true;
+  Timer? _debounceTimer;
+
+  void _onSearchTextChanged() {
+    _debounceTimer?.cancel();
+    final text = _searchController.text.trim();
+    if (_searchQuery == text) return;
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _searchQuery = text;
+        });
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchTextChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.autoAddUrl != null && widget.autoAddUrl!.isNotEmpty) {
+        _showManageReposSheet(
+          context,
+          autoAddUrl: widget.autoAddUrl,
+          autoAddType: widget.autoAddType,
+          autoAddManager: widget.autoAddManager,
+        );
+      } else {
+        final repos = ref.read(activeExtReposProvider);
+        if (repos.isEmpty) {
+          ExtensionGuideSheet.show(context);
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _searchController.removeListener(_onSearchTextChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DefaultTabController(
+      length: 2,
+      child: AppScaffold(
+        title: 'Sources',
+        subtitle: 'Extensions & Catalogs',
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        barBottom: _buildBarBottom(),
+        actions: _buildActions(context),
+        body: TabBarView(
+          children: [
+            SourcesTab(
+              key: ValueKey('anime_$_isInstalledMode'),
+              engineFilter: _selectedEngineFilter,
+              type: MediaType.ANIME,
+              searchQuery: _searchQuery,
+              langFilter: _selectedLangFilter,
+              isInstalled: _isInstalledMode,
+              onBrowseAvailable: () => setState(() => _isInstalledMode = false),
+            ),
+            SourcesTab(
+              key: ValueKey('manga_$_isInstalledMode'),
+              engineFilter: _selectedEngineFilter,
+              type: MediaType.MANGA,
+              searchQuery: _searchQuery,
+              langFilter: _selectedLangFilter,
+              isInstalled: _isInstalledMode,
+              onBrowseAvailable: () => setState(() => _isInstalledMode = false),
+            ),
+          ],
+        ),
+        floatingActionButton: Builder(
+          builder: (context) => _buildFab(context, theme),
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildBarBottom() {
+    final animeSources = ref.watch(availableAnimeSourcesProvider).value ?? [];
+    final mangaSources = ref.watch(availableMangaSourcesProvider).value ?? [];
+    final enabledManagers = ref.watch(enabledExtensionManagersProvider);
+
+    final countInstalledAnime = ExtensionsService.getSourcesTabCount(
+      type: MediaType.ANIME,
+      isInstalled: true,
+      engineFilter: _selectedEngineFilter,
+      searchQuery: _searchQuery,
+      langFilter: _selectedLangFilter,
+      animeSources: animeSources,
+      mangaSources: mangaSources,
+      novelSources: const [],
+      enabledManagers: enabledManagers.toList(),
+    );
+    final countInstalledManga = ExtensionsService.getSourcesTabCount(
+      type: MediaType.MANGA,
+      isInstalled: true,
+      engineFilter: _selectedEngineFilter,
+      searchQuery: _searchQuery,
+      langFilter: _selectedLangFilter,
+      animeSources: animeSources,
+      mangaSources: mangaSources,
+      novelSources: const [],
+      enabledManagers: enabledManagers.toList(),
+    );
+    final countAvailableAnime = ExtensionsService.getSourcesTabCount(
+      type: MediaType.ANIME,
+      isInstalled: false,
+      engineFilter: _selectedEngineFilter,
+      searchQuery: _searchQuery,
+      langFilter: _selectedLangFilter,
+      animeSources: animeSources,
+      mangaSources: mangaSources,
+      novelSources: const [],
+      enabledManagers: enabledManagers.toList(),
+    );
+    final countAvailableManga = ExtensionsService.getSourcesTabCount(
+      type: MediaType.MANGA,
+      isInstalled: false,
+      engineFilter: _selectedEngineFilter,
+      searchQuery: _searchQuery,
+      langFilter: _selectedLangFilter,
+      animeSources: animeSources,
+      mangaSources: mangaSources,
+      novelSources: const [],
+      enabledManagers: enabledManagers.toList(),
+    );
+
+    final totalInstalled = countInstalledAnime + countInstalledManga;
+    final totalAvailable = countAvailableAnime + countAvailableManga;
+
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(130),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildModeSelector(totalInstalled, totalAvailable),
+          _buildFilterBar(),
+          _buildTabBarContent(
+            countInstalledAnime: countInstalledAnime,
+            countInstalledManga: countInstalledManga,
+            countAvailableAnime: countAvailableAnime,
+            countAvailableManga: countAvailableManga,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterBar() {
+    final cs = Theme.of(context).colorScheme;
+    final roundness = ref.watch(
+      themePrefsProvider.select((s) => s.uiRoundness),
+    );
+
+    return SizedBox(
+      height: 40,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _buildEngineCapsule(cs, roundness),
+              const SizedBox(width: 8),
+              _buildLanguageCapsule(cs, roundness),
+              if (_selectedEngineFilter != 'All' ||
+                  _selectedLangFilter != 'All') ...[
+                const SizedBox(width: 8),
+                _buildResetCapsule(cs, roundness),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEngineCapsule(ColorScheme cs, double roundness) {
+    const engines = [
+      'All',
+      'Mangayomi',
+      'Tachiyomi',
+      'CloudStream',
+      'Kotatsu',
+      'Sora',
+    ];
+    final isAll = _selectedEngineFilter == 'All';
+
+    return PopupMenuButton<String>(
+      initialValue: _selectedEngineFilter,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(roundness),
+      ),
+      onSelected: (val) => setState(() => _selectedEngineFilter = val),
+      itemBuilder: (context) {
+        return engines.map((e) {
+          final isSelected = _selectedEngineFilter == e;
+          return PopupMenuItem<String>(
+            value: e,
+            child: Row(
+              children: [
+                Icon(
+                  isSelected
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  size: 18,
+                  color: isSelected ? cs.primary : cs.onSurfaceVariant,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  e == 'All' ? 'All Engines' : e,
+                  style: TextStyle(
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                    color: isSelected ? cs.primary : cs.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isAll
+              ? cs.surfaceContainerHighest.withValues(alpha: 0.5)
+              : cs.primaryContainer,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isAll
+                ? Colors.transparent
+                : cs.primary.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.extension_rounded,
+              size: 16,
+              color: isAll ? cs.onSurfaceVariant : cs.onPrimaryContainer,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              isAll ? 'All Engines' : _selectedEngineFilter,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isAll ? FontWeight.w500 : FontWeight.bold,
+                color: isAll ? cs.onSurfaceVariant : cs.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 16,
+              color: isAll ? cs.onSurfaceVariant : cs.onPrimaryContainer,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageCapsule(ColorScheme cs, double roundness) {
+    final sortedLangs = ExtensionsService.getAvailableLanguages();
+    final isAll = _selectedLangFilter == 'All';
+
+    return PopupMenuButton<String>(
+      initialValue: _selectedLangFilter,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(roundness),
+      ),
+      onSelected: (val) => setState(() => _selectedLangFilter = val),
+      itemBuilder: (context) {
+        return sortedLangs.map((l) {
+          final isSelected = _selectedLangFilter == l;
+          return PopupMenuItem<String>(
+            value: l,
+            child: Row(
+              children: [
+                Icon(
+                  isSelected
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  size: 18,
+                  color: isSelected ? cs.primary : cs.onSurfaceVariant,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  l == 'All' ? 'All Languages' : l.toUpperCase(),
+                  style: TextStyle(
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                    color: isSelected ? cs.primary : cs.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isAll
+              ? cs.surfaceContainerHighest.withValues(alpha: 0.5)
+              : cs.primaryContainer,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isAll
+                ? Colors.transparent
+                : cs.primary.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.language_rounded,
+              size: 16,
+              color: isAll ? cs.onSurfaceVariant : cs.onPrimaryContainer,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              isAll ? 'All Languages' : _selectedLangFilter.toUpperCase(),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isAll ? FontWeight.w500 : FontWeight.bold,
+                color: isAll ? cs.onSurfaceVariant : cs.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 16,
+              color: isAll ? cs.onSurfaceVariant : cs.onPrimaryContainer,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResetCapsule(ColorScheme cs, double roundness) {
+    return InkWell(
+      onTap: () => setState(() {
+        _selectedEngineFilter = 'All';
+        _selectedLangFilter = 'All';
+      }),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: cs.errorContainer.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.close_rounded, size: 14, color: cs.onErrorContainer),
+            const SizedBox(width: 4),
+            Text(
+              'Reset',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: cs.onErrorContainer,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModeSelector(int totalInstalled, int totalAvailable) {
+    final roundness = ref.watch(
+      themePrefsProvider.select((s) => s.uiRoundness),
+    );
+    final availableStr = totalAvailable > 99
+        ? '99+'
+        : totalAvailable.toString();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: SegmentedButton<bool>(
+        showSelectedIcon: true,
+        segments: [
+          ButtonSegment<bool>(
+            value: true,
+            icon: const Icon(Icons.download_done_rounded, size: 18),
+            label: Text(
+              'Installed ($totalInstalled)',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+            ),
+          ),
+          ButtonSegment<bool>(
+            value: false,
+            icon: const Icon(Icons.explore_outlined, size: 18),
+            label: Text(
+              'Get Extensions ($availableStr)',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+            ),
+          ),
+        ],
+        selected: {_isInstalledMode},
+        onSelectionChanged: (newSelection) {
+          setState(() {
+            _isInstalledMode = newSelection.first;
+          });
+        },
+        style: ButtonStyle(
+          visualDensity: VisualDensity.compact,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(roundness * 0.75),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabBarContent({
+    required int countInstalledAnime,
+    required int countInstalledManga,
+    required int countAvailableAnime,
+    required int countAvailableManga,
+  }) {
+    return TabBar(
+      isScrollable: false,
+      indicatorSize: TabBarIndicatorSize.tab,
+      indicatorAnimation: TabIndicatorAnimation.linear,
+      dividerColor: Colors.transparent,
+      tabs: [
+        _buildTab(
+          'Anime',
+          _isInstalledMode ? countInstalledAnime : countAvailableAnime,
+        ),
+        _buildTab(
+          'Manga',
+          _isInstalledMode ? countInstalledManga : countAvailableManga,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTab(String text, int count) {
+    final countStr = count > 99 ? '99+' : count.toString();
+    final cs = Theme.of(context).colorScheme;
+    final roundness = ref.watch(
+      themePrefsProvider.select((s) => s.uiRoundness),
+    );
+
+    return Tab(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(text),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer,
+              borderRadius: BorderRadius.circular(roundness * 0.5),
+            ),
+            child: Text(
+              countStr,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: cs.onPrimaryContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.speed_rounded),
+        tooltip: 'Test Extensions',
+        onPressed: () => context.pushSettingsExtensionsTest(),
+      ),
+
+      IconButton(
+        icon: const Icon(Icons.info_outline_rounded),
+        tooltip: 'Extension Guide',
+        onPressed: () => ExtensionGuideSheet.show(context),
+      ),
+      const SizedBox(width: 4),
+    ];
+  }
+
+  Widget _buildFab(BuildContext context, ThemeData theme) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        UnifiedSearchBar(
+          isExpanded: _isSearching,
+          expandedWidth: MediaQuery.of(context).size.width * 0.75,
+          height: 52,
+          controller: _searchController,
+          hintText: 'Search extensions...',
+          onExpand: () => setState(() => _isSearching = true),
+          onBackPressed: () => setState(() {
+            _isSearching = false;
+            _searchQuery = '';
+            _searchController.clear();
+          }),
+          onClearPressed: () => setState(() {
+            _searchQuery = '';
+            _searchController.clear();
+          }),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          verticalDirection: VerticalDirection.up,
+          children: [
+            SizedBox(
+              height: 44,
+              child: FloatingActionButton.extended(
+                heroTag: 'manage_engines_fab',
+                backgroundColor: theme.colorScheme.secondaryContainer,
+                foregroundColor: theme.colorScheme.onSecondaryContainer,
+                icon: const Icon(Icons.extension_rounded, size: 18),
+                label: const Text(
+                  'Manage Engines',
+                  style: TextStyle(fontSize: 13),
+                ),
+                onPressed: () => _showManageEnginesSheet(context),
+              ),
+            ),
+            SizedBox(
+              height: 44,
+              child: FloatingActionButton.extended(
+                heroTag: 'add_repo_fab',
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                icon: const Icon(Icons.storage_rounded, size: 18),
+                label: const Text(
+                  'Manage Repos',
+                  style: TextStyle(fontSize: 13),
+                ),
+                onPressed: () => _showManageReposSheet(context),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showManageEnginesSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final enabled = ref.watch(enabledExtensionManagersProvider);
+            final notifier = ref.read(
+              enabledExtensionManagersProvider.notifier,
+            );
+
+            final isRuntimeReady = AppInit.isBridgeInitialized;
+            final cs = Theme.of(context).colorScheme;
+
+            final engines = [
+              (
+                'mangayomi',
+                'Mangayomi Engine',
+                'External runtime engine for Anime & Manga extensions',
+                Icons.auto_awesome_mosaic_rounded,
+              ),
+              (
+                'aniyomi',
+                'Tachiyomi / Aniyomi Engine',
+                'External runtime engine for Manga & Anime extensions',
+                Icons.video_library_rounded,
+              ),
+              (
+                'cloudstream',
+                'CloudStream Engine',
+                'External runtime engine for Video streaming extensions',
+                Icons.cloud_queue_rounded,
+              ),
+              (
+                'kotatsu',
+                'Kotatsu Engine',
+                'External runtime engine for Manga reading extensions',
+                Icons.menu_book_rounded,
+              ),
+              (
+                'sora',
+                'Sora Engine',
+                'External runtime engine for Novel & Anime extensions',
+                Icons.auto_stories_rounded,
+              ),
+            ];
+
+            return AppBottomSheet(
+              title: 'Manage Extension Engines',
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    child: Text(
+                      'Enable or disable external extension runtime engines. Enabled engines will appear in your catalogs and discovery feeds alongside your native inbuilt sources.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...engines.map((e) {
+                    final id = e.$1;
+                    final title = e.$2;
+                    final desc = e.$3;
+                    final isRuntimeEngine = [
+                      'mangayomi',
+                      'aniyomi',
+                      'cloudstream',
+                      'kotatsu',
+                      'sora',
+                    ].contains(id);
+
+                    final isEnabled =
+                        enabled.contains(id) &&
+                        (!isRuntimeEngine || isRuntimeReady);
+
+                    return SettingsSwitchTile(
+                      icon: e.$4,
+                      title: title,
+                      subtitle: desc,
+                      value: isEnabled,
+                      onChanged: (val) {
+                        if (val && isRuntimeEngine) {
+                          if (!isRuntimeReady) {
+                            showRuntimeSetupSheet(
+                              context,
+                              ref,
+                              onComplete: () {
+                                notifier.toggleManager(id, true);
+                                ref.invalidate(availableAnimeSourcesProvider);
+                                ref.invalidate(availableMangaSourcesProvider);
+                                ref.invalidate(availableNovelSourcesProvider);
+                              },
+                            );
+                            return;
+                          }
+                        }
+                        notifier.toggleManager(id, val);
+                        ref.invalidate(availableAnimeSourcesProvider);
+                        ref.invalidate(availableMangaSourcesProvider);
+                        ref.invalidate(availableNovelSourcesProvider);
+                      },
+                    );
+                  }),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showManageReposSheet(
+    BuildContext context, {
+    String? autoAddUrl,
+    String? autoAddType,
+    String? autoAddManager,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ManageReposSheet(
+        managerId: 'aniyomi',
+        autoAddUrl: autoAddUrl,
+        autoAddType: autoAddType,
+        autoAddManager: autoAddManager,
+      ),
+    );
+  }
+}
