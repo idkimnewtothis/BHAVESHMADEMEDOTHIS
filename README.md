@@ -1,233 +1,89 @@
-<div align="center">
+# Bhavesh
 
-   <img src="https://raw.githubusercontent.com/roshancodespace/shonenx/main/assets/images/app_icon.png" alt="ShonenX Logo" width="120"/>
+Independent Android anime app derived from ShonenX, licensed under GPL-3.0.
 
-# ShonenX
+- Application ID: `io.github.idkimnewtothis.bhavesh`
+- App version: `1.0.0+1`
+- Target: ARM64 Android 8.0+ (API 26)
+- New private release signing key; unrelated to the upstream app's identity/key.
 
-### Read. Watch. Track.
+## Install on your phone
 
-[![Flutter](https://img.shields.io/badge/Flutter-≥3.8.1-02569B?logo=flutter)](https://flutter.dev/)
-[![Dart](https://img.shields.io/badge/Dart-≥3.8.1-0175C2?logo=dart)](https://dart.dev)
-[![Version](https://img.shields.io/badge/Version-1.7.5-blue)](https://github.com/roshancodespace/ShonenX/releases)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![GitHub stars](https://img.shields.io/github/stars/roshancodespace/ShonenX?style=social)](https://github.com/roshancodespace/ShonenX/stargazers)
-[![Discord](https://img.shields.io/discord/1348756894034165800?color=7289da&label=Discord&logo=discord&logoColor=white)](https://discord.gg/uJyXZYSmH4)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/roshan.codespace)
+Use the assets in the [1.0.0 release](https://github.com/idkimnewtothis/BHAVESHMADEMEDOTHIS/releases/tag/v1.0.0).
 
-**[🌐 Visit the Official Website](https://shonenx.vercel.app)**
+1. Download apk-joiner.html, every part, and the manifest.
+2. Open apk-joiner.html from Downloads in your browser.
+3. Tap Select parts, choose every part and the manifest, then tap Join.
+4. Tap Download APK. If Android blocks the install, allow installs from your browser. This is usually under Settings → Apps → Special app access → Install unknown apps.
+5. Open the APK from Downloads and tap Install.
 
-Created and maintained by [Roshan Kumar](https://github.com/roshancodespace) with the help of community contributors. ShonenX is an open-source, ad-free, and tracker-free anime and manga client. Tracks progress across AniList, MyAnimeList, and Kitsu.
+The joiner works offline, stores nothing, verifies each part and the complete APK, and refuses damaged or incomplete downloads. Keep the manifest with its corresponding parts. The download requires enough free phone storage for the parts and assembled APK.
 
-[Features](#features) • [Screenshots](#screenshots) • [Installation](#installation) • [Contributing](#contributing) • [Contributors](#contributors)
+## Extension store
 
-</div>
+Open Settings → Extensions → Manage repositories. Add the repository index URL:
 
-
-> [!CAUTION]
-> ### Legal & DMCA Disclaimer
-> 
-> **01. Service Nature:** ShonenX does not host, upload, or own any of the media you see in the app. It's simply a frontend client—a glorified web browser. We do not have servers hosting anime.
-> 
-> **02. APIs & Metadata:** The covers, synopses, and schedules are pulled directly from public APIs like AniList, MyAnimeList, and Kitsu. ShonenX merely displays the metadata they provide.
-> 
-> **03. User Extensions & Content:** Any "extensions" or third-party sources you decide to install are entirely on you. ShonenX doesn't distribute copyrighted material or endorse piracy. Ensure you follow your local laws; we are not your lawyers. If you're a copyright holder looking to DMCA someone, please contact the extension developers or the host of the video files.
-
-
-## Supporters
-
-<p align="center">
-  <a href="https://www.buymeacoffee.com/roshan.codespace" target="_blank">
-    <img src="https://img.shields.io/badge/Support%20Development-Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee"/>
-  </a>
-</p>
-
-<br/>
-
-<table>
-  <tr>
-    <td align="center">
-        <img src="https://cdn.buymeacoffee.com/uploads/profile_pictures/default/v2/DEBBB9/IZ.png" width="80px;" />
-        <br />
-        <sub><b>Izan</b></sub>
-    </td>
-    <td align="center">
-        <img src="https://cdn.buymeacoffee.com/uploads/profile_pictures/default/v2/E3CBF4/EK.png" width="80px;" />
-        <br />
-        <sub><b>EVEE KNOA</b></sub>
-    </td>
-  </tr>
-</table>
-
----
-
-## Features
-
-- **Parallel Progress Tracking:** Sync watch and read progress across your linked trackers (AniList, MyAnimeList, and Kitsu).
-- **Custom Reader & Player:** Low-latency media playback and reading with customizable flow controls and AMOLED dark mode support.
-- **Offline Availability:** Volume and episode downloading for offline viewing and reading.
-- **External Extensions:** Utilizes the AnymeX Extension Runtime Bridge for Aniyomi and Mangayomi extension support. The client ships bare-bones; all sources are user-managed.
-- **Cross-Platform:** Native builds for Android, Windows, and Linux (with experimental macOS and iOS support).
-
----
-
-## Technology Stack
-
-**Framework**: Flutter ≥3.8.1 | **Language**: Dart ≥3.8.1
-
-<details>
-<summary><b>View Key Dependencies</b></summary>
-
-```yaml
-dependencies:
-  flutter_riverpod: ^3.0.1
-  go_router: ^14.7.1
-  media_kit: ^1.2.6
-  media_kit_video: ^2.0.1
-  isar_community: ^3.3.0
-  flex_color_scheme: ^8.4.0
+```
+https://raw.githubusercontent.com/yuzono/anime-repo/repo/index.min.json
 ```
 
-</details>
+Both `aniyomi://add-repo?url=...` and `aniyomi://extension-store?url=...` are handled. Approve the repository signing fingerprint on first installation, then confirm installation in Android and refresh the store. A certificate mismatch is blocked. Android may require permission to install apps from Bhavesh.
 
----
+Only Aniyomi **anime** APKs are accepted. Lib versions 14, 16 and 17 have host entry points; other versions are rejected with a reason. Static checks of the four selected extensions are documented in [the compatibility report](docs/compat-report.md). Static ABI checks do not prove source website compatibility. Manga reader/library code remains in the shell, with **No manga sources in this build**.
 
-## Screenshots
+## Current limitations
 
-<details>
-<summary><b>📱 Android Screenshots (Click to expand)</b></summary>
+This is an experimental build, not a claim that all original workstreams are complete. See [workstream status](docs/workstreams.md) and [compatibility](docs/compat-report.md).
 
-<br/>
+- Android installation, source calls, title/episode matrix, restart/reboot behavior and app screenshots are UNVERIFIED: no connected device or accelerated emulator is available.
+- Multi-source streaming search, per-source retry/cancellation, confirmed-match persistence/overrides, full source-switch identity handling, foreground download service and comprehensive accessibility/reduced-motion work remain incomplete.
+- Android downloads use app-specific storage. Arbitrary filesystem directories are not offered on Android; no broad storage permission is requested.
+- Login, payment and challenge responses are unsupported. No challenge bypass is implemented. No playback or real-video download checks were performed.
+- Tracker credentials are not bundled; register your own tracker application using `bhavesh://callback` and use the custom credentials settings.
+- Upstream announcement configuration is disconnected by default. Optional `BHAVESH_CONFIG_URL` is a build-time setting. Crash logging remains local; no telemetry service was added.
 
-<div align="center">
-<table>
-  <tr>
-    <td align="center">
-      <img src="screenshots/mobile/home.jpg" width="200" alt="Home"/>
-      <br/><b>Home</b>
-    </td>
-    <td align="center">
-      <img src="screenshots/mobile/details.jpg" width="200" alt="Details"/>
-      <br/><b>Details</b>
-    </td>
-    <td align="center">
-      <img src="screenshots/mobile/stream.jpg" width="200" alt="Player"/>
-      <br/><b>Player</b>
-    </td>
-    <td align="center">
-      <img src="screenshots/mobile/anilist.jpg" width="200" alt="AniList"/>
-      <br/><b>AniList</b>
-    </td>
-  </tr>
-</table>
-</div>
+## Build and signing
 
-</details>
+Use Flutter **3.41.9**, JDK **21**, Android SDK/build tools **36**, and Flutter's NDK **28.2.13676358**. The initial dependency build also needs Rust (rhttp), CMake and NDK 27 for plugin builds. The shell's original release shrinking/minification is retained. QuickJS is linked with 16 KB page flags.
 
-<details>
-<summary><b>🖥️ Desktop Views (Windows/Linux)</b></summary>
+Initialize the public package submodules individually, then resolve dependencies:
 
-<br/>
-
-<div align="center">
-<table>
-  <tr>
-    <td align="center">
-      <img src="screenshots/desktop/home.jpg" width="400" alt="Desktop Home"/>
-      <br/><b>Home Screen</b>
-    </td>
-    <td align="center">
-      <img src="screenshots/desktop/details.jpg" width="400" alt="Desktop Details"/>
-      <br/><b>Anime Details</b>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="screenshots/desktop/stream.jpg" width="400" alt="Desktop Player"/>
-      <br/><b>Video Player</b>
-    </td>
-    <td align="center">
-      <img src="screenshots/desktop/anilist.jpg" width="400" alt="Desktop AniList"/>
-      <br/><b>AniList Integration</b>
-    </td>
-  </tr>
-</table>
-</div>
-
-</details>
-
----
-
-## Installation
-
-### 📱 Android
-Download the latest `.apk` from the [GitHub Releases](https://github.com/roshancodespace/ShonenX/releases) page.
-
-### 🪟 Windows
-Download the `Windows-Portable.zip` or the `.exe` installer from the [Releases](https://github.com/roshancodespace/ShonenX/releases) page.
-
-### 🐧 Linux (Universal Install Script)
-We provide a universal interactive installation script for Linux users. It will fetch the latest release, extract it, set up the desktop icon, and add it to your PATH automatically.
-
-Run the following command in your terminal:
-```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/roshancodespace/ShonenX/main/install.sh)"
-```
-*Note: You can run this same command again to uninstall ShonenX safely!*
-
-### macOS & iOS (⚠️ Highly Experimental)
-> [!WARNING]
-> **macOS and iOS builds are HIGHLY EXPERIMENTAL.**  
-> Builds for macOS and iOS might be present in releases or might not be available at all, even if a release is marked stable for other platforms. Expect potential bugs, quirks, and manual sideloading/signing requirements.
-
-### 🛠️ Build from Source
-**Prerequisites**: Flutter SDK ≥3.8.1, Git, Rust
-- **Linux Dependencies**: Building on Linux requires GTK, `libmpv`, and `libwpewebkit` (Ubuntu/Debian: `sudo apt install libgtk-3-dev libmpv-dev libwpewebkit-1.0-dev`, Arch Linux: `sudo pacman -S gtk3 mpv wpewebkit`). See the [Local Setup Guide](docs/setup/index.md) for details.
-```bash
-git clone https://github.com/roshancodespace/ShonenX.git
-cd ShonenX
+```sh
+git submodule update --init packages/byte_me packages/commentum_client packages/flutter_web_auth
 flutter pub get
-dart run build_runner build -d
-flutter run # Select your device/platform
 ```
 
----
+The unused, inaccessible upstream `shonenx-sources` gitlink and stale `byte_me_ecosystem` mapping were removed. The Android anime bridge is vendored.
 
-## Contributing
+Generate a separate keystore outside the checkout. Keytool prompts for passwords:
 
-Contributions are welcome. Before opening a PR, please review the
-[Contribution Guidelines](./docs/contributing/index.md).
+```sh
+keytool -genkeypair -keystore /private/path/bhavesh-release.jks \
+  -alias bhavesh-release -keyalg RSA -keysize 4096 -validity 10000
+```
 
-For significant features, architectural changes, dependency changes, or
-structural refactors, please open an issue for discussion before submitting
-implementation work.
+Create ignored `android/key.properties` with `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`. Back up the private key/password securely: app updates require the same key. Never commit or upload signing files to a release. The delivered build's public certificate fingerprint is recorded in the release report.
 
----
+```sh
+flutter analyze lib test
+flutter test
+flutter build apk --release --target-platform android-arm64
+python3 scripts/verify_apk.py build/app/outputs/flutter-apk/app-release.apk
+python3 tools/verify-extension-abi.py --host build/app/outputs/flutter-apk/app-release.apk /path/to/test-extensions/*.apk
+python3 scripts/split_apk.py build/app/outputs/flutter-apk/app-release.apk --output dist/1.0.0
+python3 scripts/split_apk.py dist/1.0.0/bhavesh-1.0.0.manifest.json --verify \
+  --original build/app/outputs/flutter-apk/app-release.apk --output /tmp/joined.apk
+python3 scripts/verify_apk.py /tmp/joined.apk
+node test/delivery/joiner.test.js
+python3 test/delivery/abi_checker_test.py
+python3 test/delivery/browser_joiner.py dist/1.0.0/bhavesh-1.0.0.manifest.json --download /tmp/browser-joined.apk
+python3 scripts/verify_apk.py /tmp/browser-joined.apk
+```
 
-## Contributors
+The verifier defaults to the published app’s public signing-certificate fingerprint. For a separately generated developer key, pass its verified fingerprint with `--certificate`; never substitute a different key for a published app update.
 
-A huge thank you to everyone who has contributed to ShonenX!
+Expose `apksigner` on PATH (or pass `--apksigner`) and set `ANDROID_HOME`. Host Flutter tests using rhttp require its Linux `librhttp.so` on `LD_LIBRARY_PATH`; build it with `RUSTFLAGS='--cfg reqwest_unstable' cargo build --locked` in the resolved rhttp `rust/` directory. On an 8 GB builder, use a 3 GB Gradle heap, two workers and in-process Kotlin compilation to avoid an OOM kill.
 
-<a href="https://github.com/roshancodespace/ShonenX/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=roshancodespace/ShonenX" />
-</a>
+## Credits
 
----
-
-## Author & Support
-
-**Lead Developer & Maintainer**: Roshan Kumar Sharma  
-**GitHub**: [@roshancodespace](https://github.com/roshancodespace)  
-**Buy Me a Coffee**: [roshan.codespace](https://www.buymeacoffee.com/roshan.codespace)  
-**Email**: roshan.codespace@gmail.com  
-**Discord**: [Join Community](https://discord.gg/uJyXZYSmH4)  
-**License**: GPL-3.0 (See [LICENSE](LICENSE) file)
-
----
-
-<div align="center">
-
-### ⭐ Star this repo if you find it useful!
-
-**Crafted with ❤️ by [Roshan Kumar](https://github.com/roshancodespace) & [Contributors](https://github.com/roshancodespace/ShonenX/graphs/contributors)**
-
-</div>
+[Upstream source/version audit](docs/upstream-versions.md), [original README](UPSTREAM_README.md), [third-party credits](THIRD_PARTY.md), and [GPL-3.0 license](LICENSE). Credits are also available in About.

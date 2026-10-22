@@ -196,6 +196,9 @@ class ExtensionAdapter {
     String engineId,
     bridge.ItemType type,
   ) async {
+    if (engineId != 'aniyomi' || type != bridge.ItemType.anime) {
+      throw UnsupportedError('Only Aniyomi anime repositories are supported.');
+    }
     final normalizedUrl = normalizeRepoUrl(url, engineId);
     final manager = _resolveManager(engineId);
 
@@ -343,7 +346,7 @@ class ExtensionAdapter {
     final clean = id.replaceAll('-desktop', '').toLowerCase();
     return switch (clean) {
       'mangayomi' => 'Mangayomi',
-      'aniyomi' => 'Tachiyomi / Aniyomi',
+      'aniyomi' => 'Aniyomi',
       'cloudstream' => 'CloudStream',
       'kotatsu' => 'Kotatsu',
       'sora' => 'Sora',

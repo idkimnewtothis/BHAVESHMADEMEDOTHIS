@@ -1,0 +1,22 @@
+{
+  "aniyomi-en.animepahe-v16.55.apk": {
+    "checkedReferences": 59,
+    "missingMembers": [],
+    "status": "PASS"
+  },
+  "aniyomi-en.kickassanime-v14.62.apk": {
+    "checkedReferences": 47,
+    "missingMembers": [],
+    "status": "PASS"
+  },
+  "aniyomi-en.kotokai-v16.9.apk": {
+    "checkedReferences": 57,
+    "missingMembers": [],
+    "status": "PASS"
+  },
+  "aniyomi-en.wcostream-v14.15.apk": {
+    "checkedReferences": 37,
+    "missingMembers": [],
+    "status": "PASS"
+  }
+}

@@ -12,7 +12,7 @@ import 'package:shonenx/shared/models/unified_media.dart';
 class DiscordRpcService {
   static const String applicationId = '1519961030078234666';
   static const String _appIconUrl =
-      'https://raw.githubusercontent.com/roshancodespace/ShonenX/refs/heads/main/assets/images/app_icon.png';
+      'https://raw.githubusercontent.com/roshancodespace/Bhavesh/refs/heads/main/assets/images/app_icon.png';
 
   final _log = AppLogger.scope(DiscordRpcService);
   final _desktop = _DesktopRpc();
@@ -155,7 +155,7 @@ class DiscordRpcService {
           largeImage: coverUrl ?? _appIconUrl,
           largeText: title,
           smallImage: _appIconUrl,
-          smallText: 'ShonenX',
+          smallText: 'Bhavesh',
         ),
         buttons: showButtons
             ? [RPCButton(label: 'View Anime', url: mediaUrl)]
@@ -243,7 +243,7 @@ class DiscordRpcService {
           largeImage: coverUrl ?? _appIconUrl,
           largeText: title,
           smallImage: _appIconUrl,
-          smallText: 'ShonenX',
+          smallText: 'Bhavesh',
         ),
         buttons: showButtons
             ? [RPCButton(label: 'View Manga', url: mediaUrl)]
@@ -291,7 +291,7 @@ class DiscordRpcService {
           largeImage: coverUrl ?? _appIconUrl,
           largeText: title,
           smallImage: _appIconUrl,
-          smallText: 'ShonenX',
+          smallText: 'Bhavesh',
         ),
         buttons: showButtons
             ? [RPCButton(label: 'View $typeStr', url: mediaUrl)]
@@ -329,10 +329,10 @@ class DiscordRpcService {
         details: primary,
         state: secondary,
         timestamps: RPCTimestamps(start: _browsingStartMs),
-        assets: const RPCAssets(largeImage: _appIconUrl, largeText: 'ShonenX'),
+        assets: const RPCAssets(largeImage: _appIconUrl, largeText: 'Bhavesh'),
       ),
       gateway: _gatewayPresence(
-        name: 'ShonenX',
+        name: 'Bhavesh',
         type: 0,
         details: primary,
         state: secondary,
@@ -438,9 +438,9 @@ class DiscordRpcService {
   }) async {
     final assets = <String, dynamic>{
       'large_image': await _resolveAsset(coverUrl ?? _appIconUrl),
-      'large_text': largeText ?? 'ShonenX',
+      'large_text': largeText ?? 'Bhavesh',
       'small_image': await _resolveAsset(_appIconUrl),
-      'small_text': 'ShonenX',
+      'small_text': 'Bhavesh',
     };
 
     if (coverUrl == null) {
@@ -716,8 +716,8 @@ class _GatewayConnection {
         'token': t,
         'properties': {
           '\$os': Platform.operatingSystem,
-          '\$browser': 'ShonenX',
-          '\$device': 'ShonenX Client',
+          '\$browser': 'Bhavesh',
+          '\$device': 'Bhavesh Client',
         },
         'presence': {'status': 'online', 'afk': false},
       },

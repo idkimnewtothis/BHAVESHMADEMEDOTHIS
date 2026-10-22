@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:anymex_extension_runtime_bridge/Services/Aniyomi/AniyomiExtensions.dart';
 
 import 'package:anymex_extension_runtime_bridge/Services/Aniyomi/Models/Source.dart';
 import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart'
@@ -606,7 +607,7 @@ class _SourcesTabState extends ConsumerState<SourcesTab> {
 
   Future<void> _checkRuntimeIfNeeded() async {
     final isBridgeFilter =
-        widget.engineFilter == 'Tachiyomi' ||
+        widget.engineFilter == 'Aniyomi' ||
         widget.engineFilter == 'CloudStream' ||
         widget.engineFilter == 'Kotatsu';
     if (isBridgeFilter &&
@@ -684,11 +685,74 @@ class _SourcesTabState extends ConsumerState<SourcesTab> {
   }
 
   Widget _buildContent(BuildContext context, List<UnifiedSource> sources) {
+    if (widget.type == MediaType.MANGA) {
+      return const Center(child: Text('No manga sources in this build'));
+    }
+    final errors = <String>[];
+    AniyomiExtensions? manager;
+    if (Get.isRegistered<bridge.ExtensionManager>()) {
+      final candidate = Get.find<bridge.ExtensionManager>().findById('aniyomi');
+      if (candidate is AniyomiExtensions) {
+        manager = candidate;
+        errors.addAll(
+          candidate.loadFailures.map((e) => '${e['package']}: ${e['reason']}'),
+        );
+        errors.addAll(
+          candidate.repositoryErrors.entries.map((e) => '${e.key}: ${e.value}'),
+        );
+      }
+    }
+    if (errors.isEmpty) return _buildSourceList(context, sources);
+    return Column(
+      children: [
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 200),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final error in errors)
+                ListTile(
+                  leading: Icon(
+                    Icons.error_outline,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  title: Text(error),
+                ),
+              TextButton.icon(
+                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+                onPressed: () async {
+                  try {
+                    await manager?.fetchInstalledAnimeExtensions();
+                    await manager?.fetchAnimeExtensions();
+                  } catch (error) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('$error')));
+                    }
+                  }
+                  if (mounted) {
+                    ref.invalidate(availableAnimeSourcesProvider);
+                    setState(() {});
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        Expanded(child: _buildSourceList(context, sources)),
+      ],
+    );
+  }
+
+  Widget _buildSourceList(BuildContext context, List<UnifiedSource> sources) {
     if (sources.isEmpty) {
       final isRuntimeReady =
           bridge.AnymeXRuntimeBridge.controller.isReady.value;
       final isBridgeFilter =
-          widget.engineFilter == 'Tachiyomi' ||
+          widget.engineFilter == 'Aniyomi' ||
           widget.engineFilter == 'CloudStream' ||
           widget.engineFilter == 'Kotatsu';
 
@@ -829,8 +893,8 @@ class _SourcesTabState extends ConsumerState<SourcesTab> {
                         ? 'Add a Mangayomi repository to fetch and install extensions.'
                         : (widget.engineFilter == 'CloudStream'
                               ? 'Add a CloudStream repository to fetch and install extensions.'
-                              : (widget.engineFilter == 'Tachiyomi'
-                                    ? 'Add a Tachiyomi repository to fetch and install extensions.'
+                              : (widget.engineFilter == 'Aniyomi'
+                                    ? 'Add an Aniyomi anime repository to fetch and install extensions.'
                                     : 'Add repositories via Manage Repos to fetch and install extensions across all enabled engines.')),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(

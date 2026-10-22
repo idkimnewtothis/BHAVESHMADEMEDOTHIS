@@ -136,63 +136,18 @@ class _ScaffoldWithNavBarState extends ConsumerState<ScaffoldWithNavBar> {
       }
     }
 
-    if ((scheme == 'aniyomi' ||
-            scheme == 'tachiyomi' ||
-            scheme == 'mangayomi' ||
-            scheme.contains('cloudstream') ||
-            scheme == 'kotatsu' ||
-            scheme == 'sora' ||
-            scheme == 'shonenx') &&
-        (host == 'add-repo' ||
-            host == 'add-repository' ||
-            scheme == 'cloudstreamrepo' ||
-            uri.queryParameters.containsKey('url'))) {
-      String? url = uri.queryParameters['url'];
-      String? managerId;
-      String? type;
-
-      if (scheme == 'aniyomi') {
-        managerId = 'aniyomi';
-        type = 'anime';
-      } else if (scheme == 'tachiyomi') {
-        managerId = 'aniyomi';
-        type = 'manga';
-      } else if (scheme == 'mangayomi') {
-        managerId = 'mangayomi';
-      } else if (scheme.contains('cloudstream')) {
-        managerId = 'cloudstream';
-        if (url == null &&
-            host.isNotEmpty &&
-            host != 'add-repo' &&
-            host != 'add-repository') {
-          url = uri.toString().replaceFirst(
-            RegExp(
-              r'^cloudstreamrepo://|^cloudstream://',
-              caseSensitive: false,
-            ),
-            '',
-          );
-          if (!url.startsWith('http://') && !url.startsWith('https://')) {
-            url = 'https://$url';
-          }
-        }
-      } else if (scheme == 'kotatsu') {
-        managerId = 'kotatsu';
-        type = 'manga';
-      } else if (scheme == 'sora') {
-        managerId = 'sora';
-        type = 'novel';
-      } else if (scheme == 'shonenx' && host == 'add-repo') {
-        managerId = uri.queryParameters['manager'] ?? 'aniyomi';
-        type = uri.queryParameters['type'];
-      }
+    if (scheme == 'aniyomi' &&
+        (host == 'add-repo' || host == 'extension-store')) {
+      final url = uri.queryParameters['url'];
+      const managerId = 'aniyomi';
+      const type = 'anime';
 
       final targetUri = Uri(
         path: '/settings/extensions',
         queryParameters: {
           if (url != null && url.isNotEmpty && url != '()') 'autoAddUrl': url,
-          if (managerId != null) 'autoAddManager': managerId,
-          if (type != null) 'autoAddType': type,
+          'autoAddManager': managerId,
+          'autoAddType': type,
         },
       );
       final target = targetUri.toString();

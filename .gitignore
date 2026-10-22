@@ -105,3 +105,18 @@ node_modules
 **/.vitepress/cache
 
 scratch
+
+# App signing and local build files
+*.jks
+*.keystore
+**/key.properties
+**/local.properties
+!scripts/*.py
+!tools/*.py
+!test/**/*.py
+!test/**/*.js
+
+android/.kotlin/
+
+__pycache__/
+*.pyc

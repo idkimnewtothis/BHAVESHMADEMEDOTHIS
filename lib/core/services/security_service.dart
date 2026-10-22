@@ -100,7 +100,7 @@ class SecurityService {
   }
 
   Future<bool> authenticateBiometrics({
-    String reason = 'Authenticate to unlock ShonenX',
+    String reason = 'Authenticate to unlock Bhavesh',
     bool biometricOnly = true,
   }) async {
     if (!Platform.isAndroid && !Platform.isIOS) return false;

@@ -1,0 +1,48 @@
+group = "com.ryan.runtimebridge"
+version = "1.0"
+buildscript {
+    ext.kotlin_version = "2.2.20"
+    repositories { google(); mavenCentral() }
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.9.1"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
+    }
+}
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+apply plugin: "org.jetbrains.kotlin.plugin.serialization"
+android {
+    namespace = "com.ryan.runtimebridge"
+    compileSdk = 36
+    compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+    kotlinOptions { jvmTarget = "17"; freeCompilerArgs += ["-Xcontext-receivers"] }
+    defaultConfig { minSdk = 26; consumerProguardFiles 'proguard-rules.pro' }
+}
+repositories { google(); mavenCentral(); maven { url 'https://jitpack.io' } }
+configurations { extensionApiReference { transitive = false } }
+tasks.register("verifyPinnedExtensionApi") {
+    doLast {
+        def artifact = configurations.extensionApiReference.singleFile
+        def digest = java.security.MessageDigest.getInstance("SHA-256").digest(artifact.bytes).encodeHex().toString()
+        if (digest != "6912054943d9c88f9885c8bb579d17a7c4b71cedf437b95986ebb13fdd180de2") {
+            throw new GradleException("Pinned extensions-lib v17 artifact checksum mismatch")
+        }
+    }
+}
+tasks.named("preBuild") { dependsOn("verifyPinnedExtensionApi") }
+dependencies {
+    // Reference artifact only: never package Stub! bodies or replace host APIs.
+    // v17 commit 971ce96e76202bb35432fe71f92553e3ae40d01d; artifact Kotlin metadata 2.4.
+    extensionApiReference "com.github.aniyomiorg:extensions-lib:v17@aar"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2"
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.9.0"
+    implementation "com.squareup.okhttp3:okhttp:4.12.0"
+    implementation "org.jsoup:jsoup:1.21.1"
+    implementation "io.reactivex:rxjava:1.3.8"
+    implementation "uy.kohesive.injekt:injekt-core:1.16.1"
+    implementation "androidx.preference:preference-ktx:1.2.1"
+    implementation "androidx.compose.runtime:runtime-android:1.8.3"
+    implementation "org.nanohttpd:nanohttpd:2.3.1"
+}

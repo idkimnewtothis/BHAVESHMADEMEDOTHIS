@@ -204,12 +204,12 @@ class _LinuxUpdateWidgetState extends State<LinuxUpdateWidget> {
             _addLog('[*] Extracting update bundle...');
           } else if (step == 4) {
             _statusMessage = 'Updating executable symlink...';
-            _addLog('[*] Symlinking ShonenX executable...');
+            _addLog('[*] Symlinking Bhavesh executable...');
           } else if (step >= 5) {
             timer.cancel();
             _isUpdating = false;
             _updateSuccess = true;
-            _statusMessage = 'Update complete! Restart ShonenX to apply.';
+            _statusMessage = 'Update complete! Restart Bhavesh to apply.';
             _addLog('[+] Update finished successfully. Ready to restart.');
           }
         });
@@ -272,7 +272,7 @@ class _LinuxUpdateWidgetState extends State<LinuxUpdateWidget> {
           _isUpdating = false;
           _downloadProgress = 1.0;
           _updateSuccess = true;
-          _statusMessage = 'Update complete! Restart ShonenX to apply.';
+          _statusMessage = 'Update complete! Restart Bhavesh to apply.';
         });
         _addLog('[+] Installation complete. Ready to restart.');
       } else {
@@ -346,7 +346,7 @@ class _LinuxUpdateWidgetState extends State<LinuxUpdateWidget> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            '[Preview Mode] On Linux, this launches the updated ShonenX binary and exits the current process.',
+            '[Preview Mode] On Linux, this launches the updated Bhavesh binary and exits the current process.',
           ),
         ),
       );
@@ -355,7 +355,7 @@ class _LinuxUpdateWidgetState extends State<LinuxUpdateWidget> {
 
     final home = Platform.environment['HOME'] ?? '';
     final binPath = '$home/.local/bin/shonenx';
-    final installBinPath = '$home/.local/share/ShonenX/shonenx';
+    final installBinPath = '$home/.local/share/Bhavesh/shonenx';
 
     String targetExe = Platform.resolvedExecutable;
     if (File(binPath).existsSync()) {
@@ -372,7 +372,7 @@ class _LinuxUpdateWidgetState extends State<LinuxUpdateWidget> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to auto-restart: $e. Reopen ShonenX manually.',
+              'Failed to auto-restart: $e. Reopen Bhavesh manually.',
             ),
             backgroundColor: Colors.red,
           ),
@@ -399,7 +399,7 @@ class _LinuxUpdateWidgetState extends State<LinuxUpdateWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'ShonenX ${widget.release?.tagName ?? 'Linux Update'}',
+                    'Bhavesh ${widget.release?.tagName ?? 'Linux Update'}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -500,7 +500,7 @@ class _LinuxUpdateWidgetState extends State<LinuxUpdateWidget> {
           FilledButton.icon(
             onPressed: _restartApp,
             icon: const Icon(Icons.restart_alt_rounded),
-            label: const Text('Restart ShonenX'),
+            label: const Text('Restart Bhavesh'),
           ),
         ] else if (_hasError) ...[
           FilledButton.icon(

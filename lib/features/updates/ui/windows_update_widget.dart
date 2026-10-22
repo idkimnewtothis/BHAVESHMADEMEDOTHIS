@@ -74,8 +74,8 @@ class _WindowsUpdateWidgetState extends State<WindowsUpdateWidget> {
 
     if (widget.isPreview && (asset == null || !asset.name.endsWith('.exe'))) {
       asset = const ReleaseAsset(
-        name: 'ShonenX-x86_64-2.2.0-Installer.exe',
-        downloadUrl: 'https://github.com/roshancodespace/ShonenX/releases',
+        name: 'Bhavesh-x86_64-2.2.0-Installer.exe',
+        downloadUrl: 'https://github.com/roshancodespace/Bhavesh/releases',
         size: 50855936,
       );
     }
@@ -152,7 +152,7 @@ class _WindowsUpdateWidgetState extends State<WindowsUpdateWidget> {
             _isDownloading = false;
             _installerLaunched = true;
             _statusMessage =
-                'Installer launched! Please exit ShonenX to finish installation.';
+                'Installer launched! Please exit Bhavesh to finish installation.';
             timer.cancel();
           } else {
             final mbReceived = (mbTotal * _progress).toStringAsFixed(1);
@@ -171,7 +171,7 @@ class _WindowsUpdateWidgetState extends State<WindowsUpdateWidget> {
       final tempDir = await getTemporaryDirectory();
       final fileName = _bestAsset!.name.isNotEmpty
           ? _bestAsset!.name
-          : 'ShonenX-Setup.exe';
+          : 'Bhavesh-Setup.exe';
       final file = File(p.join(tempDir.path, fileName));
       _currentFile = file;
 
@@ -182,7 +182,7 @@ class _WindowsUpdateWidgetState extends State<WindowsUpdateWidget> {
       }
 
       final request = http.Request('GET', Uri.parse(_bestAsset!.downloadUrl));
-      request.headers['User-Agent'] = 'ShonenX-App';
+      request.headers['User-Agent'] = 'Bhavesh-App';
 
       final response = await _httpClient!.send(request);
       if (response.statusCode != 200) {
@@ -245,7 +245,7 @@ class _WindowsUpdateWidgetState extends State<WindowsUpdateWidget> {
         setState(() {
           _installerLaunched = true;
           _statusMessage =
-              'Installer launched! Please exit ShonenX to finish installation.';
+              'Installer launched! Please exit Bhavesh to finish installation.';
         });
       }
     } catch (e) {
@@ -254,7 +254,7 @@ class _WindowsUpdateWidgetState extends State<WindowsUpdateWidget> {
         setState(() {
           _installerLaunched = result.type == ResultType.done;
           _statusMessage = _installerLaunched
-              ? 'Installer launched! Please exit ShonenX to finish installation.'
+              ? 'Installer launched! Please exit Bhavesh to finish installation.'
               : 'Failed to launch installer: ${result.message}';
         });
       }
@@ -290,7 +290,7 @@ class _WindowsUpdateWidgetState extends State<WindowsUpdateWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _bestAsset?.name ?? 'ShonenX Windows Installer',
+                    _bestAsset?.name ?? 'Bhavesh Windows Installer',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -340,7 +340,7 @@ class _WindowsUpdateWidgetState extends State<WindowsUpdateWidget> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text(
-                      '[Preview Mode] On Windows, this exits ShonenX so setup can update files.',
+                      '[Preview Mode] On Windows, this exits Bhavesh so setup can update files.',
                     ),
                   ),
                 );
@@ -349,7 +349,7 @@ class _WindowsUpdateWidgetState extends State<WindowsUpdateWidget> {
               }
             },
             icon: const Icon(Icons.exit_to_app_rounded),
-            label: const Text('Exit ShonenX & Install'),
+            label: const Text('Exit Bhavesh & Install'),
           ),
           const SizedBox(height: 8),
           OutlinedButton(

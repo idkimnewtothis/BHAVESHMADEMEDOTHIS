@@ -1008,8 +1008,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                     color: colorScheme.outline,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'No sources available',
+                  Text(
+                    _selectedType == MediaType.MANGA ? 'No manga sources in this build' : 'No anime sources installed',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),

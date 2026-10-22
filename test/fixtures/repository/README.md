@@ -1,0 +1,1 @@
+Real repository metadata fetched from yuzono/anime-repo (redirects to mojuru/anime-repo), commit ba5036afbbe9806143f0c4a3ea405421b61ba253. These files contain store metadata, not source search/details/episode responses. They must never be used to mark the live source matrix PASS.

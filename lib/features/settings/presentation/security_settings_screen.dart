@@ -119,7 +119,7 @@ class SecuritySettingsScreen extends ConsumerWidget {
               SettingsSwitchTile(
                 icon: Icons.lock_outline_rounded,
                 title: 'Enable App Lock',
-                subtitle: 'Require authentication to open ShonenX',
+                subtitle: 'Require authentication to open Bhavesh',
                 value: prefs.isAppLockEnabled,
                 onChanged: (enabled) async {
                   if (enabled) {
@@ -306,7 +306,7 @@ class SecuritySettingsScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Incognito Mode prevents ShonenX from saving your watch progress, read history, or syncing activity to your connected trackers (MAL, AniList, etc.).',
+                            'Incognito Mode prevents Bhavesh from saving your watch progress, read history, or syncing activity to your connected trackers (MAL, AniList, etc.).',
                             style: textTheme.bodyMedium,
                           ),
                           const SizedBox(height: 16),
@@ -469,7 +469,7 @@ class SecuritySettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              'DNS over HTTPS (DoH) encrypts all domain name queries via HTTPS to prevent ISP snooping, ISP domain hijacking, and censorship. By default, ShonenX uses Cloudflare DNS (1.1.1.1) for maximum speed and privacy.',
+              'DNS over HTTPS (DoH) encrypts all domain name queries via HTTPS to prevent ISP snooping, ISP domain hijacking, and censorship. By default, Bhavesh uses Cloudflare DNS (1.1.1.1) for maximum speed and privacy.',
               style: textTheme.bodyMedium,
             ),
             const SizedBox(height: 14),

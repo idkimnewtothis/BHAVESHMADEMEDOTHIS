@@ -422,7 +422,7 @@ class _LogsScreenState extends State<LogsScreen> {
     try {
       final path = await FilePicker.platform.saveFile(
         dialogTitle: 'Save App Logs',
-        fileName: 'shonenx_logs.txt',
+        fileName: 'bhavesh_logs.txt',
         type: FileType.custom,
         allowedExtensions: ['txt'],
       );

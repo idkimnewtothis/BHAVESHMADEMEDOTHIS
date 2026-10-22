@@ -78,7 +78,7 @@ void main(List<String> args) async {
           databaseProvider.overrideWith((ref) => init.isar),
           sharedPreferencesProvider.overrideWith((ref) => sharedPreference),
         ],
-        child: const ShonenXApp(),
+        child: const BhaveshApp(),
       ),
     );
   } catch (e, st) {
@@ -109,10 +109,10 @@ void main(List<String> args) async {
   }
 }
 
-class ShonenXApp extends ConsumerWidget {
-  const ShonenXApp({super.key});
+class BhaveshApp extends ConsumerWidget {
+  const BhaveshApp({super.key});
 
-  static final _log = AppLogger.scope(ShonenXApp);
+  static final _log = AppLogger.scope(BhaveshApp);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -137,7 +137,7 @@ class ShonenXApp extends ConsumerWidget {
 
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
-          title: 'ShonenX',
+          title: 'Bhavesh',
           themeMode: themePrefs.themeMode,
           theme: lightTheme,
           darkTheme: darkTheme,

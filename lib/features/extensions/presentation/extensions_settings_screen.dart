@@ -231,14 +231,7 @@ class _ExtensionsSettingsScreenState
   }
 
   Widget _buildEngineCapsule(ColorScheme cs, double roundness) {
-    const engines = [
-      'All',
-      'Mangayomi',
-      'Tachiyomi',
-      'CloudStream',
-      'Kotatsu',
-      'Sora',
-    ];
+    const engines = ['All', 'Aniyomi'];
     final isAll = _selectedEngineFilter == 'All';
 
     return PopupMenuButton<String>(
@@ -637,34 +630,10 @@ class _ExtensionsSettingsScreenState
 
             final engines = [
               (
-                'mangayomi',
-                'Mangayomi Engine',
-                'External runtime engine for Anime & Manga extensions',
-                Icons.auto_awesome_mosaic_rounded,
-              ),
-              (
                 'aniyomi',
-                'Tachiyomi / Aniyomi Engine',
-                'External runtime engine for Manga & Anime extensions',
+                'Aniyomi',
+                'Anime APK extensions',
                 Icons.video_library_rounded,
-              ),
-              (
-                'cloudstream',
-                'CloudStream Engine',
-                'External runtime engine for Video streaming extensions',
-                Icons.cloud_queue_rounded,
-              ),
-              (
-                'kotatsu',
-                'Kotatsu Engine',
-                'External runtime engine for Manga reading extensions',
-                Icons.menu_book_rounded,
-              ),
-              (
-                'sora',
-                'Sora Engine',
-                'External runtime engine for Novel & Anime extensions',
-                Icons.auto_stories_rounded,
               ),
             ];
 
@@ -680,7 +649,7 @@ class _ExtensionsSettingsScreenState
                       vertical: 4,
                     ),
                     child: Text(
-                      'Enable or disable external extension runtime engines. Enabled engines will appear in your catalogs and discovery feeds alongside your native inbuilt sources.',
+                      'Enable Aniyomi anime extensions in your catalogs and search.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: cs.onSurfaceVariant,
                         height: 1.3,

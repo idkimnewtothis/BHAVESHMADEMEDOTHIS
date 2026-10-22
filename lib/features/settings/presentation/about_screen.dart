@@ -79,7 +79,7 @@ class AboutScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'ShonenX',
+                'Bhavesh',
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -109,6 +109,12 @@ class AboutScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 32),
 
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'Based on ShonenX by roshancodespace. Aniyomi extension API and Mihon store format. GPL-3.0; see THIRD_PARTY.md for credits.',
+            ),
+          ),
           SettingsSection(
             title: 'Links',
             children: [
@@ -123,7 +129,9 @@ class AboutScreen extends ConsumerWidget {
                 title: 'GitHub',
                 subtitle: 'Source code and releases',
                 onTap: () => launchUrl(
-                  Uri.parse('https://github.com/roshancodespace/shonenx'),
+                  Uri.parse(
+                    'https://github.com/idkimnewtothis/BHAVESHMADEMEDOTHIS',
+                  ),
                   mode: LaunchMode.externalApplication,
                 ),
               ),
@@ -142,7 +150,7 @@ class AboutScreen extends ConsumerWidget {
                 subtitle: 'Found a bug? Let us know',
                 onTap: () => launchUrl(
                   Uri.parse(
-                    'https://github.com/roshancodespace/shonenx/issues',
+                    'https://github.com/idkimnewtothis/BHAVESHMADEMEDOTHIS/issues',
                   ),
                   mode: LaunchMode.externalApplication,
                 ),

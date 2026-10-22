@@ -5,10 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shonenx/core/network/http_client.dart';
 import 'package:shonenx/core/services/one_dm_service.dart';
-import 'package:shonenx/core/utils/device_info.dart';
 import 'package:shonenx/core/utils/http_x.dart';
 import 'package:shonenx/features/downloads/domain/models/download_task.dart';
 import 'package:shonenx/features/downloads/providers/download_prefs_provider.dart';
@@ -22,7 +20,6 @@ import 'package:shonenx/source_engine/models/source_info.dart';
 import 'package:shonenx/source_engine/source_engine_provider.dart';
 import 'package:shonenx/shared/widgets/app_bottom_sheet.dart';
 import 'package:shonenx/shared/widgets/marquee_text.dart';
-import 'package:shonenx/shared/widgets/permission_sheet.dart';
 
 class DownloadSheet extends ConsumerStatefulWidget {
   final UnifiedEpisode episode;
@@ -407,32 +404,6 @@ class _DownloadSheetState extends ConsumerState<DownloadSheet> {
         );
       }
       return;
-    }
-
-    if (Platform.isAndroid) {
-      final permission = await DeviceInfo.isAndroid10OrBelow()
-          ? Permission.storage
-          : Permission.manageExternalStorage;
-
-      final status = await permission.status;
-
-      if (!status.isGranted) {
-        if (!mounted) return;
-
-        final granted = await PermissionSheet.show(
-          context,
-          permission: permission,
-          title: 'Storage Permission',
-          description:
-              'To download episodes, ShonenX needs access to your device storage.',
-          rationale:
-              'Used only to save downloaded video files to your chosen folder.',
-        );
-
-        if (!granted) {
-          return;
-        }
-      }
     }
 
     final prefs = await ref.read(downloadPrefsProvider.future);

@@ -94,7 +94,7 @@ class UpdateService {
   static String resolveRepo() {
     final envRepo = Env.RELEASE_REPO.trim();
     if (envRepo.isNotEmpty) return envRepo;
-    return getCachedInstallerRepo() ?? 'roshancodespace/ShonenX';
+    return getCachedInstallerRepo() ?? 'idkimnewtothis/BHAVESHMADEMEDOTHIS';
   }
 
   static String? getCachedInstallerRepo() {
@@ -104,9 +104,9 @@ class UpdateService {
           Platform.environment['XDG_CONFIG_HOME'] ??
           (home.isNotEmpty ? '$home/.config' : '');
       final candidates = [
-        if (configHome.isNotEmpty) '$configHome/ShonenX/installer.cache',
+        if (configHome.isNotEmpty) '$configHome/Bhavesh/installer.cache',
         if (configHome.isNotEmpty) '$configHome/shonenx/installer.cache',
-        if (home.isNotEmpty) '$home/.local/share/ShonenX/installer.cache',
+        if (home.isNotEmpty) '$home/.local/share/Bhavesh/installer.cache',
         if (home.isNotEmpty) '$home/.local/share/shonenx/installer.cache',
       ];
       for (final path in candidates) {
@@ -148,7 +148,7 @@ class UpdateService {
         Uri.parse(apiUrl),
         headers: {
           'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'ShonenX-App',
+          'User-Agent': 'Bhavesh-App',
         },
       );
 
@@ -243,7 +243,7 @@ class UpdateService {
         Uri.parse(apiUrl),
         headers: {
           'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'ShonenX-App',
+          'User-Agent': 'Bhavesh-App',
         },
       );
       if (response.statusCode != 200) return [];

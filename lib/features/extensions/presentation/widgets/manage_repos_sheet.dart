@@ -239,13 +239,7 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
     }
   }
 
-  static const _availableEngines = [
-    ('aniyomi', 'Tachiyomi / Aniyomi'),
-    ('mangayomi', 'Mangayomi'),
-    ('cloudstream', 'CloudStream'),
-    ('kotatsu', 'Kotatsu'),
-    ('sora', 'Sora'),
-  ];
+  static const _availableEngines = [('aniyomi', 'Aniyomi')];
 
   Future<void> _confirmClearAllRepos() async {
     final roundness = GlobalUI.uiRoundness;
@@ -313,7 +307,7 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
       case 'mangayomi':
         return 'Mangayomi';
       case 'aniyomi':
-        return 'Tachiyomi / Aniyomi';
+        return 'Aniyomi';
       case 'cloudstream':
         return 'CloudStream';
       case 'kotatsu':

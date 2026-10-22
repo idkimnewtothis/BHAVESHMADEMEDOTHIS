@@ -2,11 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import 'package:shonenx/core/network/http_client.dart';
 import 'package:shonenx/core/services/one_dm_service.dart';
-import 'package:shonenx/core/utils/device_info.dart';
 import 'package:shonenx/core/utils/http_x.dart';
 import 'package:shonenx/features/downloads/domain/models/download_task.dart';
 import 'package:shonenx/features/downloads/providers/download_prefs_provider.dart';
@@ -21,7 +19,6 @@ import 'package:shonenx/shared/models/unified_media.dart';
 import 'package:shonenx/shared/models/video_server.dart';
 import 'package:shonenx/shared/models/video_stream.dart';
 import 'package:shonenx/shared/widgets/app_bottom_sheet.dart';
-import 'package:shonenx/shared/widgets/permission_sheet.dart';
 import 'package:shonenx/shared/widgets/app_dialog.dart';
 import 'package:shonenx/source_engine/models/source_info.dart';
 import 'package:shonenx/source_engine/source_engine_provider.dart';
@@ -301,25 +298,6 @@ class BatchDownloadSheetState extends ConsumerState<BatchDownloadSheet> {
       }
       selectedSubtitleLabels = subLabels;
 
-      if (Platform.isAndroid) {
-        final permission = await DeviceInfo.isAndroid10OrBelow()
-            ? Permission.storage
-            : Permission.manageExternalStorage;
-        final status = await permission.status;
-        if (!status.isGranted) {
-          if (!mounted) return;
-          final granted = await PermissionSheet.show(
-            context,
-            permission: permission,
-            title: 'Storage Permission',
-            description:
-                'To download episodes, ShonenX needs access to your device storage.',
-            rationale:
-                'Used only to save downloaded video files to your chosen folder.',
-          );
-          if (!granted) return;
-        }
-      }
       currentIndex = 0;
       successCount = 0;
       failedEpisodes.clear();

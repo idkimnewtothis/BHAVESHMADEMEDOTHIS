@@ -1,7 +1,7 @@
 name: shonenx
 description: "Minimal yet feature-rich Anime/Manga Client"
 publish_to: "none"
-version: 2.1.4+4
+version: 1.0.0+1
 
 environment:
   sdk: ^3.9.2
@@ -83,6 +83,7 @@ dependencies:
   flutter_device_apps: ^0.8.1
   better_player_plus: ^1.0.8
   webview_all: ^1.4.4
+  unorm_dart: ^0.3.3
 
 dependency_overrides:
   flutter_inappwebview: 6.2.0-beta.2

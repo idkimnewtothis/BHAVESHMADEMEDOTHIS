@@ -28,7 +28,7 @@ class AnimeSourceAdapter extends BaseSourceAdapter implements AnimeSource {
       return (detail.episodes ?? []).map(_mapToUnifiedEpisode).toList();
     } catch (e, st) {
       methodLog.e('getEpisodes failed', e, st);
-      return [];
+      throw StateError('${sourceInfo.name}: episode list failed: $e');
     }
   }
 

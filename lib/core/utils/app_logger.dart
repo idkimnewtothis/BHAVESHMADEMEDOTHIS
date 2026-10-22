@@ -56,7 +56,7 @@ class AppLogger {
               ? await pp.getExternalStorageDirectory()
               : null) ??
           await pp.getApplicationDocumentsDirectory();
-      final path = p.join(dir.path, 'ShonenX', 'app_logs.txt');
+      final path = p.join(dir.path, 'Bhavesh', 'app_logs.txt');
 
       final file = File(path);
       await file.create(recursive: true);

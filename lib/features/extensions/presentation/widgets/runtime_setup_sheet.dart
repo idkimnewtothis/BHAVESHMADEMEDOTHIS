@@ -177,7 +177,7 @@ class _RuntimeSetupSheetState extends ConsumerState<RuntimeSetupSheet> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                'Runtime updated! Please restart ShonenX for changes to take effect.',
+                'Runtime updated! Please restart Bhavesh for changes to take effect.',
               ),
               behavior: SnackBarBehavior.floating,
               duration: Duration(seconds: 5),
@@ -249,7 +249,7 @@ class _RuntimeSetupSheetState extends ConsumerState<RuntimeSetupSheet> {
                         ),
                       ),
                       Text(
-                        'Required for Aniyomi, CloudStream & Kotatsu extensions.',
+                        'Required for Aniyomi anime extensions.',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),
@@ -376,7 +376,7 @@ class _RuntimeSetupSheetState extends ConsumerState<RuntimeSetupSheet> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Always restart ShonenX after force updating the runtime.',
+                      'Always restart Bhavesh after force updating the runtime.',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: cs.onSurfaceVariant,
                       ),

@@ -228,7 +228,7 @@ abstract class BaseSourceAdapter implements MediaSource {
       return parsed;
     } catch (e, st) {
       methodLog.e('[${sourceInfo.name}] search failed', e, st);
-      return [];
+      throw StateError('${sourceInfo.name}: search failed: $e');
     }
   }
 
@@ -274,8 +274,8 @@ abstract class BaseSourceAdapter implements MediaSource {
       );
       try {
         return await search('', mediaType, page: page);
-      } catch (_) {
-        return [];
+      } catch (error) {
+        throw StateError('${sourceInfo.name}: popular/search failed: $error');
       }
     }
   }
@@ -309,6 +309,7 @@ abstract class BaseSourceAdapter implements MediaSource {
         cover: detail.cover,
         description: detail.description,
         genres: detail.genre,
+        status: detail.status,
       );
       return parsed;
     } catch (e, st) {

@@ -367,7 +367,7 @@ class _PresetGallerySheetState extends ConsumerState<PresetGallerySheet> {
     AppThemePreset? targetPreset,
   ]) {
     final nameController = TextEditingController(
-      text: targetPreset?.name ?? 'My ShonenX Theme',
+      text: targetPreset?.name ?? 'My Bhavesh Theme',
     );
     final authorController = TextEditingController(
       text: targetPreset?.author ?? '@roshancodespace',
@@ -445,7 +445,7 @@ class _PresetGallerySheetState extends ConsumerState<PresetGallerySheet> {
                       map['name'] = name;
                       map['author'] = author.isEmpty ? 'Community' : author;
                       map['description'] = desc.isEmpty
-                          ? 'A ShonenX theme.'
+                          ? 'A Bhavesh theme.'
                           : desc;
                       exportPreset = AppThemePreset.fromMap(map);
                     } else {
@@ -507,7 +507,7 @@ class _PresetGallerySheetState extends ConsumerState<PresetGallerySheet> {
               children: [
                 const Expanded(
                   child: Text(
-                    'Paste a ShonenX Theme JSON code below:',
+                    'Paste a Bhavesh Theme JSON code below:',
                     style: TextStyle(fontSize: 13),
                   ),
                 ),

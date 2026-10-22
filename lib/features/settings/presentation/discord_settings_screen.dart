@@ -36,7 +36,7 @@ class DiscordSettingsScreen extends ConsumerWidget {
             controller: activityController,
             decoration: const InputDecoration(
               labelText: 'Activity Name',
-              hintText: 'e.g. Glazing ShonenX',
+              hintText: 'e.g. Glazing Bhavesh',
             ),
           ),
           const SizedBox(height: 14),
@@ -58,7 +58,7 @@ class DiscordSettingsScreen extends ConsumerWidget {
                     settings.copyWith(
                       idleActivity: newActivity.isNotEmpty
                           ? newActivity
-                          : 'Glazing ShonenX',
+                          : 'Glazing Bhavesh',
                       idleDetails: newDetails.isNotEmpty
                           ? newDetails
                           : 'Browsing Catalog',

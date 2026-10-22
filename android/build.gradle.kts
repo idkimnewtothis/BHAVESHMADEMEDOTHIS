@@ -22,6 +22,17 @@ subprojects {
             configure<com.android.build.gradle.BaseExtension> {
                 compileSdkVersion(36)
                 buildToolsVersion("36.0.0")
+                if (project.name == "flutter_qjs") {
+                    defaultConfig {
+                        externalNativeBuild {
+                            cmake {
+                                arguments("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
+                                    "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384")
+                            }
+                        }
+                    }
+                }
+
 
                 if (namespace == null) {
                     namespace = project.group.toString()

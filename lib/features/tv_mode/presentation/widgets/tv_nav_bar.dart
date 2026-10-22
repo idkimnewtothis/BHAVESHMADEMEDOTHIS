@@ -31,7 +31,7 @@ class TvNavBar extends StatelessWidget {
         child: Row(
           children: [
             const Text(
-              'ShonenX TV',
+              'Bhavesh TV',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(width: 32),

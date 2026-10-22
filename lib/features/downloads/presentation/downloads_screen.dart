@@ -115,7 +115,7 @@ class DownloadsScreen extends ConsumerWidget {
 
   Future<void> _addTestDownload(BuildContext context, WidgetRef ref) async {
     final dir = await getApplicationDocumentsDirectory();
-    final saveDir = Directory('${dir.path}/ShonenX/Downloads');
+    final saveDir = Directory('${dir.path}/Bhavesh/Downloads');
     if (!await saveDir.exists()) await saveDir.create(recursive: true);
 
     final ts = DateTime.now().millisecondsSinceEpoch;
@@ -710,7 +710,7 @@ class _DownloadedFilesTabState extends ConsumerState<_DownloadedFilesTab> {
                     children: [
                       Icon(Icons.play_arrow_rounded, size: 20),
                       SizedBox(width: 12),
-                      Text('Play in ShonenX'),
+                      Text('Play in Bhavesh'),
                     ],
                   ),
                 ),

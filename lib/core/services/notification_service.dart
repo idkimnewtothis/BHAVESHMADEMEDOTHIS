@@ -52,11 +52,11 @@ class NotificationService {
 
       const android = AndroidInitializationSettings('@mipmap/ic_launcher');
       const windows = WindowsInitializationSettings(
-        appName: 'ShonenX',
+        appName: 'Bhavesh',
         appUserModelId: 'com.example.shonenx',
         guid: '123e4567-e89b-12d3-a456-426614174000',
       );
-      const linux = LinuxInitializationSettings(defaultActionName: 'ShonenX');
+      const linux = LinuxInitializationSettings(defaultActionName: 'Bhavesh');
 
       const settings = InitializationSettings(
         android: android,

@@ -1,0 +1,302 @@
+[
+  {
+    "target": "Naruto",
+    "source": "Naruto (TV)",
+    "accept": true
+  },
+  {
+    "target": "Naruto Season 2",
+    "source": "Naruto 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Naruto Season 2",
+    "source": "Naruto Season 3",
+    "accept": false
+  },
+  {
+    "target": "One Piece",
+    "source": "One Piece (TV)",
+    "accept": true
+  },
+  {
+    "target": "One Piece Season 2",
+    "source": "One Piece 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "One Piece Season 2",
+    "source": "One Piece Season 3",
+    "accept": false
+  },
+  {
+    "target": "Bleach",
+    "source": "Bleach (TV)",
+    "accept": true
+  },
+  {
+    "target": "Bleach Season 2",
+    "source": "Bleach 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Bleach Season 2",
+    "source": "Bleach Season 3",
+    "accept": false
+  },
+  {
+    "target": "Attack on Titan",
+    "source": "Attack on Titan (TV)",
+    "accept": true
+  },
+  {
+    "target": "Attack on Titan Season 2",
+    "source": "Attack on Titan 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Attack on Titan Season 2",
+    "source": "Attack on Titan Season 3",
+    "accept": false
+  },
+  {
+    "target": "Demon Slayer",
+    "source": "Demon Slayer (TV)",
+    "accept": true
+  },
+  {
+    "target": "Demon Slayer Season 2",
+    "source": "Demon Slayer 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Demon Slayer Season 2",
+    "source": "Demon Slayer Season 3",
+    "accept": false
+  },
+  {
+    "target": "Jujutsu Kaisen",
+    "source": "Jujutsu Kaisen (TV)",
+    "accept": true
+  },
+  {
+    "target": "Jujutsu Kaisen Season 2",
+    "source": "Jujutsu Kaisen 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Jujutsu Kaisen Season 2",
+    "source": "Jujutsu Kaisen Season 3",
+    "accept": false
+  },
+  {
+    "target": "My Hero Academia",
+    "source": "My Hero Academia (TV)",
+    "accept": true
+  },
+  {
+    "target": "My Hero Academia Season 2",
+    "source": "My Hero Academia 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "My Hero Academia Season 2",
+    "source": "My Hero Academia Season 3",
+    "accept": false
+  },
+  {
+    "target": "Fullmetal Alchemist",
+    "source": "Fullmetal Alchemist (TV)",
+    "accept": true
+  },
+  {
+    "target": "Fullmetal Alchemist Season 2",
+    "source": "Fullmetal Alchemist 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Fullmetal Alchemist Season 2",
+    "source": "Fullmetal Alchemist Season 3",
+    "accept": false
+  },
+  {
+    "target": "Steins;Gate",
+    "source": "Steins;Gate (TV)",
+    "accept": true
+  },
+  {
+    "target": "Steins;Gate Season 2",
+    "source": "Steins;Gate 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Steins;Gate Season 2",
+    "source": "Steins;Gate Season 3",
+    "accept": false
+  },
+  {
+    "target": "Re:Zero",
+    "source": "Re:Zero (TV)",
+    "accept": true
+  },
+  {
+    "target": "Re:Zero Season 2",
+    "source": "Re:Zero 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Re:Zero Season 2",
+    "source": "Re:Zero Season 3",
+    "accept": false
+  },
+  {
+    "target": "Fate/Zero",
+    "source": "Fate/Zero (TV)",
+    "accept": true
+  },
+  {
+    "target": "Fate/Zero Season 2",
+    "source": "Fate/Zero 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Fate/Zero Season 2",
+    "source": "Fate/Zero Season 3",
+    "accept": false
+  },
+  {
+    "target": "Sword Art Online",
+    "source": "Sword Art Online (TV)",
+    "accept": true
+  },
+  {
+    "target": "Sword Art Online Season 2",
+    "source": "Sword Art Online 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Sword Art Online Season 2",
+    "source": "Sword Art Online Season 3",
+    "accept": false
+  },
+  {
+    "target": "Haikyu!!",
+    "source": "Haikyu!! (TV)",
+    "accept": true
+  },
+  {
+    "target": "Haikyu!! Season 2",
+    "source": "Haikyu!! 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Haikyu!! Season 2",
+    "source": "Haikyu!! Season 3",
+    "accept": false
+  },
+  {
+    "target": "Mob Psycho 100",
+    "source": "Mob Psycho 100 (TV)",
+    "accept": true
+  },
+  {
+    "target": "Mob Psycho 100 Season 2",
+    "source": "Mob Psycho 100 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Mob Psycho 100 Season 2",
+    "source": "Mob Psycho 100 Season 3",
+    "accept": false
+  },
+  {
+    "target": "One Punch Man",
+    "source": "One Punch Man (TV)",
+    "accept": true
+  },
+  {
+    "target": "One Punch Man Season 2",
+    "source": "One Punch Man 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "One Punch Man Season 2",
+    "source": "One Punch Man Season 3",
+    "accept": false
+  },
+  {
+    "target": "Vinland Saga",
+    "source": "Vinland Saga (TV)",
+    "accept": true
+  },
+  {
+    "target": "Vinland Saga Season 2",
+    "source": "Vinland Saga 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Vinland Saga Season 2",
+    "source": "Vinland Saga Season 3",
+    "accept": false
+  },
+  {
+    "target": "Frieren",
+    "source": "Frieren (TV)",
+    "accept": true
+  },
+  {
+    "target": "Frieren Season 2",
+    "source": "Frieren 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "Frieren Season 2",
+    "source": "Frieren Season 3",
+    "accept": false
+  },
+  {
+    "target": "葬送のフリーレン",
+    "source": "葬送のフリーレン (TV)",
+    "accept": true
+  },
+  {
+    "target": "葬送のフリーレン Season 2",
+    "source": "葬送のフリーレン 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "葬送のフリーレン Season 2",
+    "source": "葬送のフリーレン Season 3",
+    "accept": false
+  },
+  {
+    "target": "進撃の巨人",
+    "source": "進撃の巨人 (TV)",
+    "accept": true
+  },
+  {
+    "target": "進撃の巨人 Season 2",
+    "source": "進撃の巨人 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "進撃の巨人 Season 2",
+    "source": "進撃の巨人 Season 3",
+    "accept": false
+  },
+  {
+    "target": "나 혼자만 레벨업",
+    "source": "나 혼자만 레벨업 (TV)",
+    "accept": true
+  },
+  {
+    "target": "나 혼자만 레벨업 Season 2",
+    "source": "나 혼자만 레벨업 2nd Season",
+    "accept": true
+  },
+  {
+    "target": "나 혼자만 레벨업 Season 2",
+    "source": "나 혼자만 레벨업 Season 3",
+    "accept": false
+  }
+]

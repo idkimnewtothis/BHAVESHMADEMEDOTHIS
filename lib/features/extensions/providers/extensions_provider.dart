@@ -1,3 +1,4 @@
+import 'package:anymex_extension_runtime_bridge/Services/Aniyomi/AniyomiExtensions.dart';
 import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart'
     as bridge;
 import 'package:collection/collection.dart';
@@ -39,6 +40,45 @@ class ExtensionsController extends Notifier<Set<String>> {
 
   Future<void> installSource(BuildContext context, UnifiedSource source) async {
     if (source.bridgeSource == null) return;
+    final manager = bridge.getSourceManager(source.bridgeSource!);
+    if (manager is AniyomiExtensions) {
+      try {
+        final fingerprint = await manager.repositoryFingerprint(
+          source.bridgeSource!,
+        );
+        if (!context.mounted) return;
+        if (!manager.isTrusted(source.bridgeSource!, fingerprint)) {
+          final approved = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Trust this anime repository?'),
+              content: Text(
+                'Extensions run code on your device. Install only from a publisher you trust.\n\n${source.bridgeSource!.repo}\n\nSHA-256 certificate:\n$fingerprint',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Trust and install'),
+                ),
+              ],
+            ),
+          );
+          if (approved != true) return;
+          manager.trustRepository(source.bridgeSource!, fingerprint);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Cannot verify ${source.name}: $e')),
+          );
+        }
+        return;
+      }
+    }
     state = {...state, source.id};
     try {
       await bridge
@@ -48,7 +88,9 @@ class ExtensionsController extends Notifier<Set<String>> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${source.name} installed successfully!'),
+            content: Text(
+              'Confirm installation of ${source.name} in Android, then refresh the store.',
+            ),
             backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
           ),
@@ -227,6 +269,45 @@ class ExtensionsController extends Notifier<Set<String>> {
       } catch (_) {}
     }
     if (extSource == null) return;
+    final manager = bridge.getSourceManager(source.bridgeSource!);
+    if (manager is AniyomiExtensions) {
+      try {
+        final fingerprint = await manager.repositoryFingerprint(
+          source.bridgeSource!,
+        );
+        if (!context.mounted) return;
+        if (!manager.isTrusted(source.bridgeSource!, fingerprint)) {
+          final approved = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Trust this anime repository?'),
+              content: Text(
+                'Extensions run code on your device. Install only from a publisher you trust.\n\n${source.bridgeSource!.repo}\n\nSHA-256 certificate:\n$fingerprint',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Trust and install'),
+                ),
+              ],
+            ),
+          );
+          if (approved != true) return;
+          manager.trustRepository(source.bridgeSource!, fingerprint);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Cannot verify ${source.name}: $e')),
+          );
+        }
+        return;
+      }
+    }
     state = {...state, source.id};
     try {
       await bridge.getSourceManager(extSource).updateSource(extSource);

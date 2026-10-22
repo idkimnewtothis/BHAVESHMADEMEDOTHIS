@@ -38,22 +38,24 @@ class DownloadSettingsScreen extends ConsumerWidget {
                           icon: Icons.folder_outlined,
                           title: 'Download Location',
                           subtitle: prefs.downloadPath,
-                          onTap: () async {
-                            final String? directoryPath = await FilePicker
-                                .platform
-                                .getDirectoryPath();
-                            if (directoryPath != null &&
-                                directoryPath != prefs.downloadPath) {
-                              if (context.mounted) {
-                                _handleLocationChangeRequest(
-                                  context,
-                                  prefsNotifier,
-                                  prefs.downloadPath,
-                                  directoryPath,
-                                );
-                              }
-                            }
-                          },
+                          onTap: Platform.isAndroid
+                              ? null
+                              : () async {
+                                  final String? directoryPath = await FilePicker
+                                      .platform
+                                      .getDirectoryPath();
+                                  if (directoryPath != null &&
+                                      directoryPath != prefs.downloadPath) {
+                                    if (context.mounted) {
+                                      _handleLocationChangeRequest(
+                                        context,
+                                        prefsNotifier,
+                                        prefs.downloadPath,
+                                        directoryPath,
+                                      );
+                                    }
+                                  }
+                                },
                           trailing: FilledButton.icon(
                             icon: const Icon(Icons.restore_outlined, size: 18),
                             label: const Text('Reset'),
@@ -202,7 +204,7 @@ class DownloadSettingsScreen extends ConsumerWidget {
                                     child: const Text(
                                       '1DM (Internet Download Manager) is a popular third-party Android download manager app. '
                                       'It supports up to 32 parallel download connections, background downloads, and smart error recovery.\n\n'
-                                      'If installed, ShonenX can send episode download streams directly to 1DM.',
+                                      'If installed, Bhavesh can send episode download streams directly to 1DM.',
                                     ),
                                     actions: [
                                       TextButton(

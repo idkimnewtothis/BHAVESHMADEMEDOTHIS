@@ -23,10 +23,10 @@ final shonenxLocalMetricsProvider =
       final isar = ref.watch(databaseProvider);
       final entries = await isar.historyEntrys.where().findAll();
       final watchEntries = entries
-          .where((e) => e.mediaType == MediaType.ANIME)
+          .where((e) => e.mediaType == MediaType.ANIME.id)
           .toList();
       final readCount = entries
-          .where((e) => e.mediaType != MediaType.ANIME)
+          .where((e) => e.mediaType != MediaType.ANIME.id)
           .length;
 
       final totalMillis = watchEntries.fold<double>(

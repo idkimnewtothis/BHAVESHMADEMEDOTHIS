@@ -26,12 +26,7 @@ class _ExtensionBeginnerSheetState
     extends ConsumerState<ExtensionBeginnerSheet> {
   String _selectedEngine = 'Aniyomi';
 
-  final List<String> _engines = [
-    'Aniyomi',
-    'CloudStream',
-    'Kotatsu',
-    'Mangayomi',
-  ];
+  final List<String> _engines = ['Aniyomi'];
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +172,7 @@ class _ExtensionBeginnerSheetState
               cs: cs,
               textTheme: textTheme,
               stepNumber: '3',
-              title: 'Install inside ShonenX',
+              title: 'Install inside Bhavesh',
               isLast: true, // Hides the connecting line
               content: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,7 +217,7 @@ class _ExtensionBeginnerSheetState
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Just tap the Install/Download button on the site. ShonenX will open and add it automatically.\n(Note: May be broken on Windows/Linux).',
+                          'Just tap the Install/Download button on the site. Bhavesh will open and add it automatically.\n(Note: May be broken on Windows/Linux).',
                           style: textTheme.bodySmall?.copyWith(
                             color: cs.onSurfaceVariant,
                             height: 1.4,
