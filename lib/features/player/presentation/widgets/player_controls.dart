@@ -488,6 +488,7 @@ class PlayerPlayPauseButton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: IconButton(
         color: Colors.white,
+        tooltip: isPlaying ? 'Pause' : 'Play',
         onPressed: onToggle,
         icon: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),

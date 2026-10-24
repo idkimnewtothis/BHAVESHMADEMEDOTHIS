@@ -25,7 +25,7 @@ class SimklAuthenticator implements Authenticator {
   static const String _desktopRedirectUri =
       'http://localhost:43824/success?code=1337';
   static const String _desktopCallbackScheme = 'http://localhost:43824';
-  static const String _mobileRedirectUri = 'bhavesh://callback';
+  static const String _mobileRedirectUri = 'shonenxplus://callback';
   static const String _mobileCallbackScheme = 'bhavesh';
 
   String get _mobileClientId =>

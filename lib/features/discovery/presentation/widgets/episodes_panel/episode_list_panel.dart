@@ -531,21 +531,26 @@ class _EpisodeListPanelState extends ConsumerState<EpisodeListPanel> {
 
         final safeIdx = _chunkIndex < chunks.length ? _chunkIndex : 0;
         final activeChunk = chunks[safeIdx];
-        final prefScanlator = ref.read(
+        final prefScanlator = ref.watch(
           preferredScanlatorProvider(widget.media.id),
         );
 
         // 5. Single-pass Deduplication & Chunk Filtering
-        final dedupedMap = <double, UnifiedEpisode>{};
+        final dedupedMap = <String, UnifiedEpisode>{};
 
         for (final ep in seasonEpisodes) {
+          if (widget.media.type == MediaType.MANGA &&
+              prefScanlator != null &&
+              ep.scanlator != prefScanlator) {
+            continue;
+          }
           if (activeChunk.min != null &&
               (ep.number < activeChunk.min! || ep.number > activeChunk.max!)) {
             continue;
           }
-          if (!dedupedMap.containsKey(ep.number) ||
-              ep.scanlator == prefScanlator) {
-            dedupedMap[ep.number] = ep;
+          final key = widget.media.type == MediaType.MANGA ? ep.id : ep.number.toString();
+          if (!dedupedMap.containsKey(key) || ep.scanlator == prefScanlator) {
+            dedupedMap[key] = ep;
           }
         }
 
@@ -661,6 +666,30 @@ class _EpisodeListPanelState extends ConsumerState<EpisodeListPanel> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            if (widget.media.type == MediaType.MANGA) ...[
+                              buildFilterCapsule<String?>(
+                                current: prefScanlator,
+                                items:
+                                    {
+                                      null,
+                                      ...seasonEpisodes
+                                          .map((e) => e.scanlator)
+                                          .whereType<String>(),
+                                    }.toList()..sort(
+                                      (a, b) => (a ?? '').compareTo(b ?? ''),
+                                    ),
+                                labelBuilder: (s) => s ?? 'All scanlators',
+                                icon: Icons.translate,
+                                onSelected: (s) => ref
+                                    .read(
+                                      preferredScanlatorProvider(
+                                        widget.media.id,
+                                      ).notifier,
+                                    )
+                                    .setPreferred(s),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
                             if (uniqueSeasons.length > 1) ...[
                               buildFilterCapsule<int?>(
                                 current: activeSeason,
@@ -700,8 +729,7 @@ class _EpisodeListPanelState extends ConsumerState<EpisodeListPanel> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (!widget.isTv) ...[
-                          if (widget.media.type == MediaType.ANIME &&
-                              finalEpisodes.isNotEmpty)
+                          if (finalEpisodes.isNotEmpty)
                             IconButton(
                               onPressed: () => BatchDownloadSheet.show(
                                 context,

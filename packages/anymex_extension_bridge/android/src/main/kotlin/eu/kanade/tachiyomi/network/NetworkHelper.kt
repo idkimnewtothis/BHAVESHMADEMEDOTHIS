@@ -20,6 +20,6 @@ class NetworkHelper(context: Context) {
     val cloudflareClient = client
     val nonCloudflareClient = client
     companion object {
-        fun defaultUserAgentProvider() = "Bhavesh/1.0 (Android)"
+        fun defaultUserAgentProvider() = "ShonenXPlus/2.0 (Android)"
     }
 }

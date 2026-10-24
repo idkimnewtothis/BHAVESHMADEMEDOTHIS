@@ -41,7 +41,7 @@ class ScreenshotHelper {
         '${now.hour.toString().padLeft(2, '0')}'
         '${now.minute.toString().padLeft(2, '0')}'
         '${now.second.toString().padLeft(2, '0')}';
-    final defaultFileName = 'Bhavesh_$timestamp.png';
+    final defaultFileName = 'ShonenX+_$timestamp.png';
 
     final savePath = await FilePicker.platform.saveFile(
       dialogTitle: 'Save Screenshot',
@@ -71,7 +71,7 @@ class ScreenshotHelper {
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(file.path)],
-        text: 'Screenshot from ${mediaTitle ?? "Bhavesh"}',
+        text: 'Screenshot from ${mediaTitle ?? "ShonenX+"}',
       ),
     );
     return (success: true, message: 'Screenshot captured');

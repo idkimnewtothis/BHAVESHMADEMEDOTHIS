@@ -1,3 +1,4 @@
+import 'package:shonenx/source_engine/models/chapter_page.dart';
 import 'package:shonenx/shared/models/unified_episode.dart';
 import 'package:shonenx/shared/models/unified_media.dart';
 import 'package:shonenx/source_engine/models/source_info.dart';
@@ -11,12 +12,14 @@ class ReaderModeOnline extends ReaderMode {
   final UnifiedEpisode episode; // This represents the chapter
   final SourceInfo sourceInfo;
   final int startPosition;
+  final List<ChapterPage>? localPages;
 
   const ReaderModeOnline({
     required this.media,
     required this.episode,
     required this.sourceInfo,
     this.startPosition = 1,
+    this.localPages,
   });
 
   @override
@@ -27,7 +30,8 @@ class ReaderModeOnline extends ReaderMode {
           media.id == other.media.id &&
           episode.id == other.episode.id &&
           sourceInfo.id == other.sourceInfo.id &&
-          startPosition == other.startPosition;
+          startPosition == other.startPosition &&
+          identical(localPages, other.localPages);
 
   @override
   int get hashCode =>

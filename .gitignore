@@ -109,6 +109,8 @@ scratch
 # App signing and local build files
 *.jks
 *.keystore
+*.p12
+*.pfx
 **/key.properties
 **/local.properties
 !scripts/*.py

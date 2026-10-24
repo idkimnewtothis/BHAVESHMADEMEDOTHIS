@@ -91,7 +91,7 @@ class _TrackingSettingsScreenState
                           (prefs.authMode == TrackerAuthMode.auto &&
                               (Platform.isWindows || Platform.isLinux))
                       ? 'http://localhost:43824/success?code=1337'
-                      : 'bhavesh://callback',
+                      : 'shonenxplus://callback',
                   style: TextStyle(
                     fontSize: 11,
                     fontFamily: 'monospace',
@@ -292,7 +292,7 @@ class _TrackingSettingsScreenState
 
                           Text(
                             'Normally you need to manually link anime and manga to your trackers. '
-                            'With Auto-Link Trackers enabled, Bhavesh automatically creates mappings with your active trackers whenever matching IDs are found.',
+                            'With Auto-Link Trackers enabled, ShonenX+ automatically creates mappings with your active trackers whenever matching IDs are found.',
                             style: textTheme.bodyMedium,
                           ),
 

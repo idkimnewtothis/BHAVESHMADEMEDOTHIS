@@ -5,27 +5,12 @@ import 'package:get/get.dart';
 
 import 'Services/Aniyomi/AniyomiExtensions.dart';
 import 'Services/Aniyomi/Models/Source.dart';
-import 'Services/CloudStream/CloudStreamExtensions.dart';
-import 'Services/IReader/DesktopIReaderExtensions.dart';
-import 'Services/IReader/IReaderExtensions.dart';
-import 'Services/IReader/Models/Source.dart';
-import 'Services/Legado/LegadoExtensions.dart';
-import 'Services/LnReader/LnReaderExtensions.dart';
-import 'Services/LnReader/Models/Source.dart';
-import 'Services/Mangayomi/MangayomiExtensions.dart';
 import 'Services/Sora/Models/Source.dart';
-import 'Services/Sora/SoraExtensions.dart';
-import 'Services/Tsundoku/DesktopTsundokuExtensions.dart';
-import 'Services/Tsundoku/Models/Source.dart';
-import 'Services/Tsundoku/TsundokuExtensions.dart';
 import 'anymex_extension_runtime_bridge.dart';
-
-import 'Settings/KvStore.dart';
 
 class ExtensionManager extends GetxController {
   final managers = <Extension>[].obs;
   final bridgeType = BridgeType.sidecar.obs;
-
 
   void setBridgeType(BridgeType type) {
     bridgeType.value = type;
@@ -53,7 +38,8 @@ class ExtensionManager extends GetxController {
   Future<void> _initDefaultManagers() async {
     await AnymeXRuntimeBridge.checkAndInitialize();
 
-    await _registerAndInitializeManagers([AniyomiExtensions()]);
+    await _registerAndInitializeManagers(
+        [AniyomiExtensions(), MihonExtensions()]);
   }
 
   Future<void> onRuntimeBridgeInitialization({
@@ -61,7 +47,8 @@ class ExtensionManager extends GetxController {
     Function(String managerId)? onManagerInitializing,
   }) async {
     await _registerAndInitializeManagers(
-      [AniyomiExtensions()], force: force,
+      [AniyomiExtensions(), MihonExtensions()],
+      force: force,
       onManagerInitializing: onManagerInitializing,
     );
   }
@@ -333,7 +320,9 @@ Extension getSourceManager(Source source) {
   final em = Get.find<ExtensionManager>();
 
   if (source is ASource) {
-    return em.findById('aniyomi') ?? em.findById('aniyomi-desktop')!;
+    final id = source.itemType == ItemType.manga ? 'mihon' : 'aniyomi';
+    return em.findById(id) ??
+        (throw StateError('$id engine is not initialized'));
   }
   if (source is MSource) return em.findById('mangayomi')!;
   if (source is SSource) return em.findById('sora')!;
@@ -354,4 +343,3 @@ Extension getSourceManager(Source source) {
 
   return em.findById('mangayomi')!;
 }
-

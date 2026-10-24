@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:shonenx/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shonenx/features/history/domain/models/history_entry.dart';
 import 'package:shonenx/features/history/providers/history_provider.dart';
@@ -41,12 +43,26 @@ class ReaderState {
 }
 
 class ReaderNotifier extends Notifier<ReaderState> {
+  int _request = 0;
+  Timer? _historyTimer;
+  HistoryEntry? _pendingHistory;
+  Future<void> _historyWrites = Future.value();
+  late Future<void> Function(HistoryEntry) _writeHistory;
   late final ReaderModeOnline arg;
 
   ReaderNotifier(this.arg);
 
   @override
   ReaderState build() {
+    final repository = ref.read(historyRepositoryProvider);
+    _writeHistory = (entry) async {
+      await repository.saveProgress(entry);
+    };
+    ref.onDispose(() {
+      _historyTimer?.cancel();
+      final entry = _pendingHistory;
+      if (entry != null) _persist(entry);
+    });
     final startPage = arg.startPosition == -1
         ? 0
         : (arg.startPosition > 0 ? arg.startPosition - 1 : 0);
@@ -62,10 +78,16 @@ class ReaderNotifier extends Notifier<ReaderState> {
   }
 
   Future<void> _fetchPages(ReaderModeOnline mode) async {
+    final request = ++_request;
+    if (!ref.mounted) return;
     state = state.copyWith(pages: const AsyncValue.loading());
     try {
-      final source = ref.read(mangaSourceProvider(mode.sourceInfo));
-      final pageList = await source.getPages(mode.episode.id);
+      final pageList =
+          mode.localPages ??
+          await ref
+              .read(mangaSourceProvider(mode.sourceInfo))
+              .getPages(mode.episode.id);
+      if (!ref.mounted || request != _request) return;
 
       if (pageList.isEmpty) {
         state = state.copyWith(
@@ -92,6 +114,7 @@ class ReaderNotifier extends Notifier<ReaderState> {
 
       _saveHistory(startPage, pageList.length);
     } catch (e, st) {
+      if (!ref.mounted || request != _request) return;
       state = state.copyWith(pages: AsyncValue.error(e, st));
     }
   }
@@ -139,15 +162,36 @@ class ReaderNotifier extends Notifier<ReaderState> {
           : null
       ..lastUpdated = DateTime.now();
 
-    ref.read(historyRepositoryProvider).saveProgress(entry);
-    ref
-        .read(syncEngineProvider)
-        .processReading(
-          media: arg.media,
-          chapterNumber: arg.episode.number,
-          positionPage: savedPageNumber,
-          totalPages: total,
-        );
+    _pendingHistory = entry;
+    _historyTimer?.cancel();
+    _historyTimer = Timer(const Duration(milliseconds: 350), () {
+      if (!ref.mounted) return;
+      _pendingHistory = null;
+      _persist(entry);
+      unawaited(
+        ref
+            .read(syncEngineProvider)
+            .processReading(
+              media: arg.media,
+              chapterNumber: arg.episode.number,
+              positionPage: savedPageNumber,
+              totalPages: total,
+            )
+            .catchError((Object e, StackTrace st) {
+              AppLogger.scope(ReaderNotifier).e('Reading sync failed', e, st);
+            }),
+      );
+    });
+  }
+
+  void _persist(HistoryEntry entry) {
+    _historyWrites = _historyWrites
+        .then((_) => _writeHistory(entry))
+        .catchError((Object e, StackTrace st) {
+          AppLogger.scope(
+            ReaderNotifier,
+          ).e('Reading progress could not be saved', e, st);
+        });
   }
 }
 

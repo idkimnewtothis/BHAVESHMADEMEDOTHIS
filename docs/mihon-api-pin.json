@@ -1,0 +1,28 @@
+{
+  "tag": "v0.21.2",
+  "commit": "9612d955db3165e1578fdf9ff19ca9b7762c4a46",
+  "supportedLibraries": [
+    "1.4",
+    "1.6"
+  ],
+  "hostFiles": {
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/CatalogueSource.kt": "b15f72ca0bcac5a71a39b782ce3bdf8fa44ff8ea83cd397efed2f9d1e9c8b7a9",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/ConfigurableSource.kt": "515db0e7db9b633ff8ee2a1ecb6ff6953169cfe556f45669a1d800c4afdaceda",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/Source.kt": "c31c6b24ef9ef038e749500032df0a8a707b9ce9074abaa4fb0df121e19816f5",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/SourceFactory.kt": "4ff3f8e591d8d059dc665735f0cb1a7fd478c00db73e7b3928b95407c383bc44",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/UnmeteredSource.kt": "82a01676da96d2386e6d4441ff97521a9eb1d8da8f1302beb871bd1cd7a72636",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/model/Filter.kt": "077c1014fb22786502aa91e402e4516c7717351e4fc0bce5d8cbf09c39fdc201",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/model/FilterList.kt": "0d914693cc6302260fe56294d58cebf67404a54f31744178e9cef10ae5512d39",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/model/MangasPage.kt": "d8beea21945b98493f6531c4c9b5ba1169cd5dce5fac4de0701adb1f5401fad8",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/model/Page.kt": "13bddc0f0fb954c45e6ca3294174d44b67eec59ef86b4ece4bc431a559425332",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/model/SChapter.kt": "39c03a0b9011afbead061434daf79d696b12c0a5a0ae4a64f258f886f66499db",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/model/SChapterImpl.kt": "0b2accae8820de3c2ec8ba6eb49a84a79c8bd7668df097d14a665f8a051390e6",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/model/SManga.kt": "1848776bbd108f90063a04004286eacd82ab0cf1821be0b7ea59a09f7e8a7cdd",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/model/SMangaImpl.kt": "339f20d0ef7931ed41311340c30c72429e5b335ce2537e6bd7c33b1096322b72",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/model/SMangaUpdate.kt": "f298847f29e2b70170487ef3bc3425c80f23f1e5ade7bb22f66851779f3c5b18",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/model/UpdateStrategy.kt": "dcdf5b3a60108c7cc1ffc8f2954fc21ac9bacc5ca066c40037533cf17b03b3eb",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/online/HttpSource.kt": "7780e5756e6d0c2b67792124db3c6c79b0dc3065e3390b8a1ae6ba8efeb58722",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/online/ParsedHttpSource.kt": "871bfcdf7200896112405c06ab4f4cb71ba4a12b3a575584310609613327533e",
+    "packages/anymex_extension_bridge/android/src/main/kotlin/eu/kanade/tachiyomi/source/online/ResolvableSource.kt": "ea9e3518111f28ba04601c0772efa71016ab27abe60f0623a69e6d62e2100193"
+  }
+}

@@ -19,14 +19,14 @@ class _DiscordRpcPreviewCardState extends State<DiscordRpcPreviewCard> {
   RpcPreviewTab _activeTab = RpcPreviewTab.idle;
 
   static const String _appIconNetworkUrl =
-      'https://raw.githubusercontent.com/roshancodespace/Bhavesh/refs/heads/main/assets/images/app_icon.png';
+      'https://raw.githubusercontent.com/roshancodespace/ShonenX+/refs/heads/main/assets/images/app_icon.png';
   static const String _onePiecePreviewImage =
       'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT8--VpUm_3ewaKmioaFpTjAUA4z46Qbb-4GQ&s';
 
   @override
   Widget build(BuildContext context) {
     String headerText = 'Playing';
-    String mainTitle = 'Bhavesh';
+    String mainTitle = 'ShonenX+';
     String subTitle1 = widget.settings.idleActivity;
     String subTitle2 = widget.settings.idleDetails;
     String startTime = '12:00';
@@ -38,7 +38,7 @@ class _DiscordRpcPreviewCardState extends State<DiscordRpcPreviewCard> {
     switch (_activeTab) {
       case RpcPreviewTab.idle:
         headerText = 'Playing';
-        mainTitle = 'Bhavesh';
+        mainTitle = 'ShonenX+';
         subTitle1 = widget.settings.idleActivity;
         subTitle2 = widget.settings.idleDetails;
         coverUrl = null;

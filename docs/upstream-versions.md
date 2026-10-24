@@ -40,3 +40,11 @@ Fetched real pinned `repo.json` and `index.min.json` successfully. The metadata 
 ShonenX pins Flutter 3.41.9 in `.fvmrc`; Android requires JDK 21 and Flutter compile SDK 36 / NDK 28.2.13676358. Release minification and shrinking are enabled and have not been changed.
 
 Full recursive submodule initialization fails for `lib/source_engine/inbuilt_sources`: `fatal: could not read Username for https://github.com: terminal prompts disabled`. Its providers are empty and current CI initializes only the four package submodules. Those four were checked out at the recorded gitlink commits. No access workaround was used.
+
+## ShonenX+ manga restoration — 2026-10-24
+
+- Mihon latest stable rechecked through GitHub: **v0.21.2**, commit **9612d955db3165e1578fdf9ff19ca9b7762c4a46**. Loader explicitly supports **1.4 and 1.6** (`ExtensionLoader.kt`); host now vendors the corresponding source-api.
+- Keiyoushi repository branch, `git ls-remote`: **6d666b4f2beba067f8aa0ca98946cc6cb7fc589d**. Saved live repo.json/index.pb/legacy JSON in test/fixtures/keiyoushi. Index parses 1,426 manga entries; legacy JSON contains Outdated App placeholders.
+- APK signer from repo.json: **9add655a78e96c4ec7a53ef89dccb557cb5d767489fac5e785d671a5a75d4da2**.
+- Exact host source hashes and update gates: mihon-api-pin.json and upstream-maintenance.md.
+- Direct GitHub commits API returned HTTP403; the repository commit was verified using Git transport instead.

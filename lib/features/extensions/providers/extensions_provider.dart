@@ -51,7 +51,7 @@ class ExtensionsController extends Notifier<Set<String>> {
           final approved = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Trust this anime repository?'),
+              title: const Text('Trust this extension repository?'),
               content: Text(
                 'Extensions run code on your device. Install only from a publisher you trust.\n\n${source.bridgeSource!.repo}\n\nSHA-256 certificate:\n$fingerprint',
               ),
@@ -280,7 +280,7 @@ class ExtensionsController extends Notifier<Set<String>> {
           final approved = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Trust this anime repository?'),
+              title: const Text('Trust this extension repository?'),
               content: Text(
                 'Extensions run code on your device. Install only from a publisher you trust.\n\n${source.bridgeSource!.repo}\n\nSHA-256 certificate:\n$fingerprint',
               ),

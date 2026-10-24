@@ -1,3 +1,4 @@
+import 'package:shonenx/features/downloads/providers/download_provider.dart';
 import 'dart:io';
 import 'dart:ui';
 import 'package:dynamic_color/dynamic_color.dart';
@@ -78,7 +79,7 @@ void main(List<String> args) async {
           databaseProvider.overrideWith((ref) => init.isar),
           sharedPreferencesProvider.overrideWith((ref) => sharedPreference),
         ],
-        child: const BhaveshApp(),
+        child: const ShonenXPlusApp(),
       ),
     );
   } catch (e, st) {
@@ -109,14 +110,17 @@ void main(List<String> args) async {
   }
 }
 
-class BhaveshApp extends ConsumerWidget {
-  const BhaveshApp({super.key});
+class ShonenXPlusApp extends ConsumerWidget {
+  const ShonenXPlusApp({super.key});
 
-  static final _log = AppLogger.scope(BhaveshApp);
+  static final _log = AppLogger.scope(ShonenXPlusApp);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final log = _log.child('build');
+    ref.listen(downloadManagerProvider, (_, next) {
+      if (next.hasError) log.e('Download queue initialization failed', next.error, next.stackTrace);
+    });
 
     // Eagerly initialize Discord RPC at app startup / hot restart
     ref.listen(discordRpcProvider, (_, __) {});
@@ -137,7 +141,7 @@ class BhaveshApp extends ConsumerWidget {
 
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
-          title: 'Bhavesh',
+          title: 'ShonenX+',
           themeMode: themePrefs.themeMode,
           theme: lightTheme,
           darkTheme: darkTheme,

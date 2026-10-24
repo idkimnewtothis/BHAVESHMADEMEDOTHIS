@@ -115,7 +115,7 @@ fun Call.asObservableSuccess(): Observable<Response> {
     }
 }
 
-fun OkHttpClient.newCachelessCallWithProgress(request: Request, listener: ProgressListener): Call {
+fun OkHttpClient.newCachelessCallWithProgress(request: Request, listener: ProgressListener, existingSize: Long = 0L): Call {
     val progressClient = newBuilder()
         .cache(null)
         .addNetworkInterceptor { chain ->
@@ -126,7 +126,8 @@ fun OkHttpClient.newCachelessCallWithProgress(request: Request, listener: Progre
         }
         .build()
 
-    return progressClient.newCall(request)
+    val resumed = if (existingSize > 0) request.newBuilder().header("Range", "bytes=$existingSize-").build() else request
+    return progressClient.newCall(resumed)
 }
 
 context(Json)

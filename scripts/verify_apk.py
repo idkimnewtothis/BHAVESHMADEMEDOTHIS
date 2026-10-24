@@ -68,9 +68,9 @@ def verify(path, app_id, version, tools, certificate):
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('apk', type=Path)
-    p.add_argument('--application-id', default='io.github.idkimnewtothis.bhavesh')
-    p.add_argument('--version', default='1.0.0')
-    p.add_argument('--certificate', default='9810883286bbefb30a6899b2c24da116273b383ee4a22db613303647a8929b0c', help='Expected public signing certificate SHA-256')
+    p.add_argument('--application-id', default='io.github.idkimnewtothis.shonenxplus')
+    p.add_argument('--version', default='2.0.0')
+    p.add_argument('--certificate', default='1e1c683fa4cbee119b96bea3f0a2c7a04a75b38679791cc3cf8a946e6bef5124', help='Expected public signing certificate SHA-256')
     p.add_argument('--build-tools', type=Path, default=Path(os.environ.get('ANDROID_HOME', '')) / 'build-tools/36.0.0')
     a = p.parse_args()
     verify(a.apk, a.application_id, a.version, a.build_tools, a.certificate)

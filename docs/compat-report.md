@@ -1,6 +1,6 @@
-# Aniyomi compatibility report
+# Extension compatibility report
 
-Test date: 2026-10-22. No playback or real video downloads were attempted.
+Original anime audit: 2026-10-22; ShonenX+ refresh: 2026-10-24. No playback or real video downloads were attempted.
 
 The four real APKs came from yuzono/anime-repo commit `ba5036afbbe9806143f0c4a3ea405421b61ba253`. All four passed apksigner and match repo.json certificate fingerprint `cbec121aa82ebb02aaa73806992e0368a97d47b5451ed6524816d03084c45905`.
 
@@ -26,3 +26,15 @@ No Android device is attached (`adb devices` returned an empty list); `/dev/kvm`
 | WCOStream — Attack on Titan Final Season Part 2 | 14 | PASS | UNVERIFIED | UNVERIFIED | — | UNVERIFIED | UNVERIFIED | No Android device | UNVERIFIED |
 
 The listed titles are test targets, not claims of catalog availability. No v17 extension has been run. The host recognizes 14/16/17; this does not mean every extension using those libraries works. App installation, store install/update/uninstall, source results and screenshots all require device validation.
+
+## ShonenX+ 2.0.0 manga audit
+
+Mihon source-api v0.21.2 (commit `9612d955db3165e1578fdf9ff19ca9b7762c4a46`) supplies manga libraries 1.4/1.6. Keiyoushi fixtures and APK downloads use repository commit `6d666b4f2beba067f8aa0ca98946cc6cb7fc589d`. All three manga APK signatures match repo.json (`9add655a78e96c4ec7a53ef89dccb557cb5d767489fac5e785d671a5a75d4da2`). The real protobuf fixture parses 1,426 entries. This verifies repository metadata, not source website execution.
+
+| Source | Lib | Static ABI references | Search | Details | Chapters/pages | Number/date parsing | Thumbnails | Error notes | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| MangaDex 1.6.0 | 1.6 | 62, PASS | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | No Android device | UNVERIFIED |
+| MANGA Plus 1.6.67 | 1.6 | 46, PASS | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | No Android device | UNVERIFIED |
+| Webtoons.com 1.6.2 | 1.6 | 42, PASS | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | No Android device | UNVERIFIED |
+
+Synthetic loopback chapter downloads verify ordered page files, bounded batch concurrency, retry after HTTP503, duplicate prevention, completed retention and database reopen recovery. Reader widgets verify webtoon scroll preservation and RTL zoom behavior. Fake player-engine tests verify controls without starting video. None of these are substituted for live source/device results. Manga support intentionally supersedes the original anime-only requirement in response to the user's latest instructions.

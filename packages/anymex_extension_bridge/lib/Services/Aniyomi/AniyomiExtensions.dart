@@ -12,6 +12,9 @@ import 'ExtensionMetadata.dart';
 import 'PbDecoder.dart';
 
 class AniyomiExtensions extends Extension {
+  ItemType get mediaType => ItemType.anime;
+  String get repositoryKey => 'animeRepositories';
+  String get packagePrefix => 'eu.kanade.tachiyomi.animeextension.';
   static const platform = MethodChannel('aniyomiExtensionBridge');
   @override
   String get id => 'aniyomi';
@@ -33,15 +36,17 @@ class AniyomiExtensions extends Extension {
   final _metadata = <String, ExtensionMetadata>{};
   final _repoByPackage = <String, String>{};
   List<Repo> _repos() =>
-      (getVal<List<String>>('animeRepositories', defaultValue: []) ?? [])
+      (getVal<List<String>>(repositoryKey, defaultValue: []) ?? [])
           .map((s) => Repo(url: s, managerId: id))
           .toList();
   @override
   Future<void> fetchInstalledAnimeExtensions() async {
-    final result = await platform
-            .invokeListMethod<dynamic>('getInstalledAnimeExtensions') ??
+    final result = await platform.invokeListMethod<dynamic>(
+            mediaType == ItemType.anime
+                ? 'getInstalledAnimeExtensions'
+                : 'getInstalledMangaExtensions') ??
         [];
-    getInstalledRx(ItemType.anime).value = result
+    getInstalledRx(mediaType).value = result
         .map((m) => ASource.fromJson(Map<String, dynamic>.from(m as Map))
           ..managerId = id)
         .toList();
@@ -54,7 +59,7 @@ class AniyomiExtensions extends Extension {
 
   Future<List<Source>> getInstalledAnimeExtensions() async {
     await fetchInstalledAnimeExtensions();
-    return getInstalledRx(ItemType.anime).value;
+    return getInstalledRx(mediaType).value;
   }
 
   Future<List<Source>> getInstalledMangaExtensions() async => [];
@@ -67,40 +72,48 @@ class AniyomiExtensions extends Extension {
   @override
   Future<void> fetchNovelExtensions() async {}
   Future<http.Response> _get(Uri uri) async {
-    if (uri.scheme != 'https')
+    if (uri.scheme != 'https') {
       throw const FormatException('Repository and APK URLs must use HTTPS');
+    }
     final response = await http.get(uri).timeout(const Duration(seconds: 20));
-    if (response.statusCode != 200)
+    if (response.statusCode != 200) {
       throw HttpException('${uri.host}: HTTP ${response.statusCode}', uri: uri);
+    }
     return response;
   }
 
   Future<List<ExtensionMetadata>> _read(Uri uri, [int depth = 0]) async {
-    if (depth > 4)
+    if (depth > 4) {
       throw const FormatException('Repository redirect limit exceeded');
+    }
     final response = await _get(uri);
     var bytes = response.bodyBytes.toList();
-    if (bytes.length > 1 && bytes[0] == 31 && bytes[1] == 139)
+    if (bytes.length > 1 && bytes[0] == 31 && bytes[1] == 139) {
       bytes = gzip.decode(bytes);
+    }
     final text = utf8.decode(bytes, allowMalformed: true).trimLeft();
     if (!text.startsWith('[')) {
       final map = text.startsWith('{')
           ? jsonDecode(text) as Map
-          : PbDecoder.decodeStore(bytes);
-      if (map['index_v2'] is String)
+          : PbDecoder.decodeStore(bytes, manga: mediaType == ItemType.manga);
+      if (map['index_v2'] is String) {
         return _read(uri.resolve(map['index_v2']), depth + 1);
-      if (map['meta'] != null)
+      }
+      if (map['meta'] != null) {
         return _read(uri.resolve('index.min.json'), depth + 1);
-      if (map['extensionListUrl'] is String)
+      }
+      if (map['extensionListUrl'] is String) {
         return _read(uri.resolve(map['extensionListUrl']), depth + 1);
+      }
     }
-    return ExtensionMetadata.parse(bytes, uri);
+    return ExtensionMetadata.parse(bytes, uri,
+        manga: mediaType == ItemType.manga);
   }
 
   @override
   Future<void> fetchAnimeExtensions() async {
     final repos = _repos();
-    getReposRx(ItemType.anime).value = repos;
+    getReposRx(mediaType).value = repos;
     final available = <Source>[];
     _metadata.clear();
     _repoByPackage.clear();
@@ -120,43 +133,44 @@ class AniyomiExtensions extends Extension {
               isNsfw: e.nsfw,
               version: e.version,
               repo: repo.url,
-              itemType: ItemType.anime)
+              itemType: mediaType)
             ..managerId = id);
         }
       } catch (e) {
         repositoryErrors[repo.url] = e.toString();
       }
     }
-    for (final source
-        in getInstalledRx(ItemType.anime).value.whereType<ASource>()) {
+    for (final source in getInstalledRx(mediaType).value.whereType<ASource>()) {
       final e = _metadata[source.pkgName];
       source.hasUpdate = e != null && e.version != source.version;
       source.versionLast = e?.version;
       source.repo = _repoByPackage[source.pkgName];
       if (e != null) source.isNsfw = e.nsfw;
     }
-    getRawAvailableRx(ItemType.anime).value = available;
-    getAvailableRx(ItemType.anime).value = available;
-    if (repositoryErrors.isNotEmpty && available.isEmpty)
+    getRawAvailableRx(mediaType).value = available;
+    getAvailableRx(mediaType).value = available;
+    if (repositoryErrors.isNotEmpty && available.isEmpty) {
       throw StateError(repositoryErrors.entries
           .map((e) => '${e.key}: ${e.value}')
           .join('\n'));
+    }
   }
 
   @override
   Future<void> addRepo(String url, ItemType type) async {
-    if (type != ItemType.anime)
-      throw UnsupportedError('No manga sources in this build');
+    if (type != mediaType) {
+      throw UnsupportedError('Repository type does not match this engine');
+    }
     final uri = Uri.parse(url);
     await _read(uri);
     final repos = _repos().map((r) => r.url).toSet()..add(url);
-    setVal('animeRepositories', repos.toList());
+    setVal(repositoryKey, repos.toList());
     await fetchAnimeExtensions();
   }
 
   @override
   Future<void> removeRepo(String url, ItemType type) async {
-    setVal('animeRepositories',
+    setVal(repositoryKey,
         _repos().map((r) => r.url).where((r) => r != url).toList());
     await fetchAnimeExtensions();
   }
@@ -166,15 +180,17 @@ class AniyomiExtensions extends Extension {
         (throw StateError('Repository missing for ${source.name}')));
     final response = await _get(uri);
     var bytes = response.bodyBytes.toList();
-    if (bytes.length > 1 && bytes[0] == 31 && bytes[1] == 139)
+    if (bytes.length > 1 && bytes[0] == 31 && bytes[1] == 139) {
       bytes = gzip.decode(bytes);
+    }
     final text = utf8.decode(bytes, allowMalformed: true).trimLeft();
     if (!text.startsWith('[')) {
       final data = text.startsWith('{')
           ? jsonDecode(text) as Map
-          : PbDecoder.decodeStore(bytes);
-      if (data['signingKey'] != null || data['meta'] != null)
+          : PbDecoder.decodeStore(bytes, manga: mediaType == ItemType.manga);
+      if (data['signingKey'] != null || data['meta'] != null) {
         return ExtensionMetadata.fingerprint(data);
+      }
     }
     return ExtensionMetadata.fingerprint(
         jsonDecode((await _get(uri.resolve('repo.json'))).body) as Map);
@@ -187,14 +203,15 @@ class AniyomiExtensions extends Extension {
   @override
   Future<void> installSource(Source source, {String? customPath}) async {
     if (source is! ASource ||
-        source.itemType != ItemType.anime ||
-        !(source.pkgName?.startsWith('eu.kanade.tachiyomi.animeextension.') ??
-            false))
-      throw UnsupportedError('Only Aniyomi anime APKs are supported');
+        source.itemType != mediaType ||
+        !(source.pkgName?.startsWith(packagePrefix) ?? false)) {
+      throw UnsupportedError('Extension APK family does not match this engine');
+    }
     final fingerprint = await repositoryFingerprint(source);
-    if (!isTrusted(source, fingerprint))
+    if (!isTrusted(source, fingerprint)) {
       throw StateError(
           'Trust this repository and its signing fingerprint before installing');
+    }
     final metadata = _metadata[source.pkgName];
     final url = metadata?.apkUrl ??
         source.apkUrl ??
@@ -226,5 +243,59 @@ class AniyomiExtensions extends Extension {
   void handleSchemes(Uri uri) {
     final url = ExtensionMetadata.deepLink(uri);
     if (url != null) unawaited(addRepo(url.toString(), ItemType.anime));
+  }
+}
+
+/// Mihon manga runtime, sharing the verified repository/install workflow.
+class MihonExtensions extends AniyomiExtensions {
+  @override
+  String get id => 'mihon';
+  @override
+  String get name => 'Mihon';
+  @override
+  ItemType get mediaType => ItemType.manga;
+  @override
+  String get repositoryKey => 'mangaRepositories';
+  @override
+  String get packagePrefix => 'eu.kanade.tachiyomi.extension.';
+  @override
+  bool get supportsAnime => false;
+  @override
+  bool get supportsManga => true;
+  @override
+  Future<void> fetchInstalledMangaExtensions() =>
+      super.fetchInstalledAnimeExtensions();
+  @override
+  Future<void> fetchInstalledAnimeExtensions() async {}
+  @override
+  Future<void> fetchMangaExtensions() => super.fetchAnimeExtensions();
+  @override
+  Future<void> fetchAnimeExtensions() async {}
+  @override
+  Future<void> addRepo(String url, ItemType type) async {
+    if (type != mediaType) {
+      throw ArgumentError('Select Manga for Mihon repositories');
+    }
+    final uri = Uri.parse(url);
+    await _read(uri);
+    setVal(repositoryKey, {..._repos().map((r) => r.url), url}.toList());
+    await fetchMangaExtensions();
+  }
+
+  @override
+  Future<void> removeRepo(String url, ItemType type) async {
+    setVal(repositoryKey,
+        _repos().map((r) => r.url).where((r) => r != url).toList());
+    await fetchMangaExtensions();
+  }
+
+  @override
+  Set<String> get schemes => {'mihon', 'tachiyomi'};
+  @override
+  void handleSchemes(Uri uri) {
+    if (schemes.contains(uri.scheme) && uri.host == 'add-repo') {
+      final url = uri.queryParameters['url'];
+      if (url != null) unawaited(addRepo(url, ItemType.manga));
+    }
   }
 }

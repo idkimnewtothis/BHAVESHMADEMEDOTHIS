@@ -71,7 +71,7 @@ class AppInit {
       final dir = await getApplicationDocumentsDirectory();
       final dslDir = Platform.isAndroid || Platform.isIOS || Platform.isMacOS
           ? Directory(p.join(dir.path, 'dsl_providers'))
-          : Directory(p.join(dir.path, 'Bhavesh', 'dsl_providers'));
+          : Directory(p.join(dir.path, 'ShonenX+', 'dsl_providers'));
 
       if (await dslDir.exists()) {
         await dslDir.delete(recursive: true);
@@ -129,7 +129,7 @@ class AppInit {
     final log = _log.child('_initDatabase');
 
     try {
-      final dir = await getDatabaseDirectory('Bhavesh');
+      final dir = await getDatabaseDirectory('ShonenX+');
 
       isar = await Isar.open(
         [
@@ -269,9 +269,9 @@ class AppInit {
     try {
       await AnymeXExtensionBridge.init(
         getDirectory: AnymeXExtensionBridge.defaultGetDirectory(
-          baseDirectory: await getDatabaseDirectory('Bhavesh'),
+          baseDirectory: await getDatabaseDirectory('ShonenX+'),
         ),
-        projectName: "Bhavesh",
+        projectName: "ShonenX+",
       );
 
       await AnymeXRuntimeBridge.checkAndInitialize();

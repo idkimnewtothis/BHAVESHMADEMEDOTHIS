@@ -24,8 +24,11 @@
 
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <application
-        android:label="Bhavesh"
+        android:label="ShonenX+"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         
@@ -45,6 +48,7 @@
             </intent-filter>
         </receiver>
 
+        <service android:name=".DownloadService" android:exported="false" android:foregroundServiceType="dataSync" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -63,6 +67,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="aniyomi" android:host="add-repo" />
+                <data android:scheme="mihon" android:host="add-repo" />
+                <data android:scheme="tachiyomi" android:host="add-repo" />
                 <data android:scheme="aniyomi" android:host="extension-store" />
             </intent-filter>
             <intent-filter>
@@ -88,11 +94,11 @@
             android:name="com.linusu.flutter_web_auth_2.CallbackActivity"
             android:exported="true"
             android:taskAffinity="">
-            <intent-filter android:label="Bhavesh">
+            <intent-filter android:label="ShonenX+">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="bhavesh" />
+                <data android:scheme="shonenxplus" />
             </intent-filter>
         </activity>
 

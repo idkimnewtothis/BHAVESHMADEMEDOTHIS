@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shonenx/features/tracking/domain/models/tracker_type.dart';
 import 'package:shonenx/source_engine/adapters/anime_source_adapter.dart';
+import 'package:shonenx/source_engine/adapters/manga_source_adapter.dart';
 
 import 'package:shonenx/source_engine/models/source_info.dart';
 import 'package:shonenx/source_engine/providers/anime_source.dart';
@@ -58,7 +59,7 @@ final animeSourceProvider = Provider.family<AnimeSource, SourceInfo>((
 
   final bridgeManager = Get.find<bridge.ExtensionManager>();
   final ext = bridgeManager.installedAnimeExtensions.firstWhere(
-    (e) => (e.name ?? "Unknown") == info.name || (e.id ?? "") == info.id,
+    (e) => (e.id ?? "") == info.id,
     orElse: () => throw StateError('Extension "${info.name}" not found'),
   );
 
@@ -77,6 +78,16 @@ final animeSourceProvider = Provider.family<AnimeSource, SourceInfo>((
   );
 }, name: 'animeSourceProvider');
 
-final mangaSourceProvider = Provider.family<MangaSource, SourceInfo>((ref, info) {
-  throw UnsupportedError('No manga sources in this build');
+final mangaSourceProvider = Provider.family<MangaSource, SourceInfo>((
+  ref,
+  info,
+) {
+  final manager = Get.find<bridge.ExtensionManager>();
+  final source = manager.installedMangaExtensions.firstWhere(
+    (source) => source.id == info.id,
+    orElse: () => throw StateError(
+      '${info.name}: manga extension is not installed or trusted',
+    ),
+  );
+  return MangaSourceAdapter(sourceInfo: info, source: source);
 }, name: 'mangaSourceProvider');

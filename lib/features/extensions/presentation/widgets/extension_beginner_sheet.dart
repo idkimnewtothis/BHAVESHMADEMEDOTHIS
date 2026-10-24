@@ -172,7 +172,7 @@ class _ExtensionBeginnerSheetState
               cs: cs,
               textTheme: textTheme,
               stepNumber: '3',
-              title: 'Install inside Bhavesh',
+              title: 'Install inside ShonenX+',
               isLast: true, // Hides the connecting line
               content: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,7 +217,7 @@ class _ExtensionBeginnerSheetState
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Just tap the Install/Download button on the site. Bhavesh will open and add it automatically.\n(Note: May be broken on Windows/Linux).',
+                          'Just tap the Install/Download button on the site. ShonenX+ will open and add it automatically.\n(Note: May be broken on Windows/Linux).',
                           style: textTheme.bodySmall?.copyWith(
                             color: cs.onSurfaceVariant,
                             height: 1.4,

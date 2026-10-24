@@ -1,3 +1,6 @@
+import 'package:shonenx/source_engine/models/source_info.dart';
+import 'package:shonenx/features/player/engine/playback_actions.dart'
+    as actions;
 import 'dart:async';
 
 import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart';
@@ -101,6 +104,26 @@ class PlayerState {
 }
 
 class PlayerController extends Notifier<PlayerState> {
+  SourceInfo? _offlineSource;
+  bool get isOffline => _source == null;
+  int _loadGeneration = 0;
+  Future<void> _initialization = Future.value();
+  bool _controlBusy = false;
+
+  Future<void> togglePlayback() async {
+    if (_controlBusy || _isDisposed) return;
+    _controlBusy = true;
+    try {
+      await actions.togglePlayback(_engine);
+    } catch (e) {
+      if (ref.mounted) {
+        state = state.copyWith(error: 'Playback control failed: $e');
+      }
+    } finally {
+      _controlBusy = false;
+    }
+  }
+
   UnifiedMedia? _media;
   UnifiedMedia? get media => _media;
   int? get malId => state.malId;
@@ -147,7 +170,7 @@ class PlayerController extends Notifier<PlayerState> {
         media: _media,
         activeEpisode: state.activeEpisode,
         activeServer: state.activeServer,
-        sourceInfo: _source?.sourceInfo,
+        sourceInfo: _source?.sourceInfo ?? _offlineSource,
         engine: _engine,
       ),
     );
@@ -262,7 +285,9 @@ class PlayerController extends Notifier<PlayerState> {
   }
 
   void _onPlaybackProgress(Duration position, Duration duration) {
-    if (_media == null || state.activeEpisode == null) return;
+    if (_source == null || _media == null || state.activeEpisode == null) {
+      return;
+    }
     if (duration.inSeconds < 30 || position.inSeconds <= 0) return;
 
     final seconds = position.inSeconds;
@@ -307,6 +332,7 @@ class PlayerController extends Notifier<PlayerState> {
     _progressTracker.setScreenshotController(screenshotController);
 
     if (mode is PlayerModeOnline) {
+      _offlineSource = null;
       _source = ref.read(animeSourceProvider(mode.sourceInfo));
       _media = mode.media;
       final immediateMalId =
@@ -359,18 +385,22 @@ class PlayerController extends Notifier<PlayerState> {
   }
 
   Future<void> _loadOfflineData(PlayerModeOffline mode) async {
-    _engine.pause();
+    ++_loadGeneration;
+    _media = mode.media;
+    _offlineSource = mode.sourceInfo;
+    await _engine.pause();
+    if (!ref.mounted) return;
     state = state.copyWith(
       isLoading: true,
       error: null,
-      activeEpisode: null,
+      activeEpisode: mode.episode,
       servers: [],
       activeServer: null,
       streams: [],
       activeStream: null,
       qualities: [],
       activeQuality: null,
-      subtitles: [],
+      subtitles: mode.subtitles,
       activeSubtitle: null,
     );
 
@@ -378,10 +408,10 @@ class PlayerController extends Notifier<PlayerState> {
       final localStream = VideoStream(
         url: mode.filePath,
         quality: 'Local',
-        subtitles: [],
+        subtitles: mode.subtitles,
       );
 
-      final subtitles = [SubtitleTrack.none];
+      final subtitles = [SubtitleTrack.none, ...mode.subtitles];
       final activeSubtitle = _resolver.resolveSubtitle(subtitles);
 
       state = state.copyWith(
@@ -397,9 +427,10 @@ class PlayerController extends Notifier<PlayerState> {
       await _engine.initialize(
         localStream,
         subtitle: activeSubtitle,
-        startAt: Duration.zero,
+        startAt: mode.startPosition ?? Duration.zero,
       );
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -411,6 +442,8 @@ class PlayerController extends Notifier<PlayerState> {
     bool force = false,
   }) async {
     if (_source == null) return;
+    final generation = ++_loadGeneration;
+    bool current() => ref.mounted && generation == _loadGeneration;
 
     final isNewEpisode = state.activeEpisode?.id != episode.id;
 
@@ -439,6 +472,7 @@ class PlayerController extends Notifier<PlayerState> {
       List<VideoServer> servers = state.servers;
       if (force || server == null || isNewEpisode) {
         servers = await _source!.getServers(episode.id);
+        if (!current()) return;
         if (servers.isEmpty) throw Exception('No servers available.');
       }
 
@@ -446,6 +480,7 @@ class PlayerController extends Notifier<PlayerState> {
       state = state.copyWith(servers: servers, activeServer: activeServer);
 
       final streams = await _source!.getSources(episode.id, activeServer);
+      if (!current()) return;
       if (streams.isEmpty) throw Exception('No streams available.');
 
       final activeStream = _resolver.resolveStream(streams);
@@ -458,14 +493,14 @@ class PlayerController extends Notifier<PlayerState> {
         isLoading: false,
       );
 
-      unawaited(
-        _initVideoPlayer(
-          activeStream,
-          subtitle: SubtitleTrack.none,
-          startAt: startPosition,
-          episode: episode,
-        ).then((_) => _updateDiscordRpc()),
+      await _initVideoPlayer(
+        activeStream,
+        subtitle: SubtitleTrack.none,
+        startAt: startPosition,
+        episode: episode,
       );
+      if (!current()) return;
+      _updateDiscordRpc();
 
       final httpClient = ref.read(httpClientProvider);
       final qualityResult = await _resolver.resolveQualities(
@@ -474,6 +509,7 @@ class PlayerController extends Notifier<PlayerState> {
         httpClient,
       );
 
+      if (!current()) return;
       final subtitles = _mapSubtitles({activeServer: streams});
       final activeSubtitle = _resolver.resolveSubtitle(subtitles);
 
@@ -506,7 +542,7 @@ class PlayerController extends Notifier<PlayerState> {
 
       unawaited(_fetchAdditionalSubtitles(episode.id, activeServer, streams));
     } catch (e) {
-      if (!ref.mounted) return;
+      if (!current()) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -757,21 +793,6 @@ class PlayerController extends Notifier<PlayerState> {
       throw Exception(
         'Torrent is temporarily disabled. Please use another server.',
       );
-      // final ep = episode ?? state.activeEpisode;
-      // final epString = ep != null
-      //     ? (ep.number % 1 == 0 ? '${ep.number.toInt()}' : '${ep.number}')
-      //     : null;
-
-      // final resolved = await TorrentStreamResolver.resolve(
-      //   stream.url,
-      //   episode: epString,
-      // );
-
-      // if (resolved.streamUrl.isEmpty) {
-      //   throw Exception('Failed to resolve torrent stream URL.');
-      // }
-
-      // resolvedStream = stream.copyWith(url: resolved.streamUrl);
     }
 
     if (resolvedStream.requiresProxy) {
@@ -804,19 +825,26 @@ class PlayerController extends Notifier<PlayerState> {
     Duration? startAt,
     UnifiedEpisode? episode,
   }) async {
+    final generation = _loadGeneration;
     final streamToPlay = await _resolveStream(stream, episode: episode);
-    if (_isDisposed) return;
+    if (_isDisposed || generation != _loadGeneration) return;
 
     final useCustomSub = ref.read(subtitlePrefsProvider).useCustomSubtitle;
     final activeSub = (useCustomSub || subtitle == null || subtitle.url.isEmpty)
         ? null
         : subtitle;
 
-    await _engine.initialize(
-      streamToPlay,
-      subtitle: activeSub,
-      startAt: startAt,
-    );
+    // Serialize native opens; an old request must not open after a newer one.
+    final operation = _initialization.then((_) async {
+      if (_isDisposed || generation != _loadGeneration) return;
+      await _engine.initialize(
+        streamToPlay,
+        subtitle: activeSub,
+        startAt: startAt,
+      );
+    });
+    _initialization = operation.catchError((Object _) {});
+    await operation;
   }
 
   Future<void> changeSubtitle(SubtitleTrack? newSubtitle) async {
@@ -908,7 +936,9 @@ class PlayerController extends Notifier<PlayerState> {
   // Skip to next/previous episode with re-entrancy protection
   Future<void> skipEpisode({bool forward = true}) async {
     if (_isSkipping) return;
-    if (_media == null || state.activeEpisode == null) return;
+    if (_source == null || _media == null || state.activeEpisode == null) {
+      return;
+    }
 
     _isSkipping = true;
     try {
@@ -932,7 +962,9 @@ class PlayerController extends Notifier<PlayerState> {
   }
 
   bool get hasNextEpisode {
-    if (_media == null || state.activeEpisode == null) return false;
+    if (_source == null || _media == null || state.activeEpisode == null) {
+      return false;
+    }
 
     final episodes = _getEpisodesList();
     if (episodes != null) {
@@ -948,7 +980,9 @@ class PlayerController extends Notifier<PlayerState> {
   }
 
   bool get hasPrevEpisode {
-    if (_media == null || state.activeEpisode == null) return false;
+    if (_source == null || _media == null || state.activeEpisode == null) {
+      return false;
+    }
 
     final episodes = _getEpisodesList();
     if (episodes != null) {
@@ -990,7 +1024,7 @@ class PlayerController extends Notifier<PlayerState> {
       media: _media,
       activeEpisode: state.activeEpisode,
       activeServer: state.activeServer,
-      sourceInfo: _source?.sourceInfo,
+      sourceInfo: _source?.sourceInfo ?? _offlineSource,
       engine: _engine,
     );
   }
@@ -1000,7 +1034,7 @@ class PlayerController extends Notifier<PlayerState> {
       media: _media,
       activeEpisode: state.activeEpisode,
       activeServer: state.activeServer,
-      sourceInfo: _source?.sourceInfo,
+      sourceInfo: _source?.sourceInfo ?? _offlineSource,
       engine: _engine,
     );
   }

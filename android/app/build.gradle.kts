@@ -14,7 +14,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "io.github.idkimnewtothis.bhavesh"
+    namespace = "io.github.idkimnewtothis.shonenxplus"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -29,7 +29,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.github.idkimnewtothis.bhavesh"
+        applicationId = "io.github.idkimnewtothis.shonenxplus"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26
@@ -83,6 +83,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.documentfile:documentfile:1.1.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 

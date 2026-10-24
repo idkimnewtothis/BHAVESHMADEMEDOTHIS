@@ -52,15 +52,6 @@ class ReaderWebtoonViewState extends State<ReaderWebtoonView> {
   }
 
   @override
-  void didUpdateWidget(covariant ReaderWebtoonView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialPage != widget.initialPage) {
-      _lastReportedPage = widget.initialPage;
-      _isInitialScrollDone = widget.initialPage == 0;
-    }
-  }
-
-  @override
   void dispose() {
     _positionsListener.itemPositions.removeListener(_onScroll);
     HardwareKeyboard.instance.removeHandler(_onKeyEvent);
@@ -154,10 +145,15 @@ class ReaderWebtoonViewState extends State<ReaderWebtoonView> {
         panEnabled: _isZoomed,
         scaleEnabled: scaleEnabled,
         child: ScrollablePositionedList.builder(
-          physics: const BouncingScrollPhysics(),
+          physics: _isZoomed || scaleEnabled
+              ? const NeverScrollableScrollPhysics()
+              : const ClampingScrollPhysics(),
           itemScrollController: _scrollController,
           itemPositionsListener: _positionsListener,
-          initialScrollIndex: widget.initialPage,
+          initialScrollIndex: widget.pages.isEmpty
+              ? 0
+              : widget.initialPage.clamp(0, widget.pages.length - 1),
+          minCacheExtent: MediaQuery.sizeOf(context).height,
           itemCount: widget.pages.length,
           itemBuilder: (context, index) {
             final page = widget.pages[index];
@@ -167,7 +163,7 @@ class ReaderWebtoonViewState extends State<ReaderWebtoonView> {
               url: page.url,
               headers: page.headers ?? const {},
               index: index,
-              scaleType: widget.scaleType,
+              scaleType: ReaderScaleType.fitWidth,
               textColor: widget.textColor,
             );
 
@@ -180,7 +176,7 @@ class ReaderWebtoonViewState extends State<ReaderWebtoonView> {
               );
             }
 
-            return imageWidget;
+            return RepaintBoundary(child: imageWidget);
           },
         ),
       ),

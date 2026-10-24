@@ -14,7 +14,7 @@ import struct
 import sys
 import zipfile
 
-API = ('Leu/kanade/tachiyomi/animesource/', 'Leu/kanade/tachiyomi/network/',
+API = ('Leu/kanade/tachiyomi/source/', 'Leu/kanade/tachiyomi/animesource/', 'Leu/kanade/tachiyomi/network/',
        'Leu/kanade/tachiyomi/util/', 'Leu/kanade/tachiyomi/AppInfo;', 'Ltachiyomi/')
 
 class Dex:

@@ -1009,7 +1009,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _selectedType == MediaType.MANGA ? 'No manga sources in this build' : 'No anime sources installed',
+                    _selectedType == MediaType.MANGA ? 'No manga sources installed. Add a Mihon repository in Extensions.' : 'No anime sources installed',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),

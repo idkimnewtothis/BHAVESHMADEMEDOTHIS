@@ -74,11 +74,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       final scheme = uri.scheme.toLowerCase();
       final host = uri.host.toLowerCase();
 
-      if (scheme == 'aniyomi' &&
+      if ({'aniyomi', 'mihon', 'tachiyomi'}.contains(scheme) &&
           (host == 'add-repo' || host == 'extension-store')) {
         final url = uri.queryParameters['url'];
-        const managerId = 'aniyomi';
-        const type = 'anime';
+        final managerId = scheme == 'aniyomi' ? 'aniyomi' : 'mihon';
+        final type = scheme == 'aniyomi' ? 'anime' : 'manga';
 
         final targetUri = Uri(
           path: '/settings/extensions',

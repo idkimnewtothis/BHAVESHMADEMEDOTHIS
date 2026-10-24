@@ -15,7 +15,7 @@ class WallpaperPaletteSeed {
 class WallpaperProcessor {
   static Future<Directory> _getThemeDirectory() async {
     final docDir = await getApplicationDocumentsDirectory();
-    final themeDirPath = '${docDir.path}/Bhavesh/Theme';
+    final themeDirPath = '${docDir.path}/ShonenX+/Theme';
     final themeDir = Directory(themeDirPath);
 
     if (!await themeDir.exists()) {

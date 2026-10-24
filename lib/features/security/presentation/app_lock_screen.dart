@@ -56,7 +56,7 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
     setState(() => _isProcessing = true);
     try {
       final success = await securityService.authenticateBiometrics(
-        reason: 'Authenticate to unlock Bhavesh',
+        reason: 'Authenticate to unlock ShonenX+',
       );
 
       if (success && mounted) {
@@ -195,7 +195,7 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
                   const SizedBox(height: 20),
 
                   Text(
-                    'Bhavesh',
+                    'ShonenX+',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,

@@ -204,7 +204,7 @@ class DownloadSettingsScreen extends ConsumerWidget {
                                     child: const Text(
                                       '1DM (Internet Download Manager) is a popular third-party Android download manager app. '
                                       'It supports up to 32 parallel download connections, background downloads, and smart error recovery.\n\n'
-                                      'If installed, Bhavesh can send episode download streams directly to 1DM.',
+                                      'If installed, ShonenX+ can send episode download streams directly to 1DM.',
                                     ),
                                     actions: [
                                       TextButton(

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -74,7 +73,7 @@ final enabledExtensionManagersProvider =
 class EnabledExtensionManagersNotifier extends Notifier<Set<String>> {
   SharedPreferences get _storage => ref.read(sharedPreferencesProvider);
   static const _key = 'enabledExtensionManagers';
-  static const _defaultStandalone = {'aniyomi'};
+  static const _defaultStandalone = {'aniyomi', 'mihon'};
 
   @override
   Set<String> build() {
@@ -209,7 +208,78 @@ final availableAnimeSourcesProvider = FutureProvider<List<SourceInfo>>(
 );
 
 final availableMangaSourcesProvider = FutureProvider<List<SourceInfo>>(
-  (ref) async => const [], name: 'availableMangaSourcesProvider',
+  retry: (retryCount, error) => null,
+  (ref) async {
+    final inbuilt = ref
+        .read(inbuiltMangaSourcesProvider)
+        .map(
+          (s) => SourceInfo(
+            id: s.sourceInfo.id,
+            name: s.sourceInfo.name,
+            type: SourceType.inbuilt,
+            mediaType: MediaType.MANGA,
+            iconUrl: s.sourceInfo.iconUrl,
+            baseUrl: s.sourceInfo.baseUrl,
+          ),
+        )
+        .toList();
+
+    try {
+      final enabledManagers = ref.watch(enabledExtensionManagersProvider);
+      final bridgeManager = Get.find<bridge.ExtensionManager>();
+      final worker1 = ever(bridgeManager.installedMangaExtensions, (_) {
+        ref.invalidateSelf();
+      });
+      final worker2 = ever(bridgeManager.availableMangaExtensions, (_) {
+        ref.invalidateSelf();
+      });
+      ref.onDispose(() {
+        worker1.dispose();
+        worker2.dispose();
+      });
+      final extensionsRaw = bridgeManager.installedMangaExtensions.where((ext) {
+        final mId = (ext.managerId ?? bridge.getSourceManager(ext).id)
+            .replaceAll('-desktop', '');
+        return enabledManagers.contains(mId) ||
+            enabledManagers.contains(
+              ext.managerId ?? bridge.getSourceManager(ext).id,
+            );
+      }).toList();
+
+      final extensions = extensionsRaw
+          .map(
+            (ext) => SourceInfo(
+              id: ext.id ?? "Unknown",
+              name: ext.name ?? "Unknown",
+              type: SourceType.extension,
+              mediaType: MediaType.MANGA,
+              iconUrl: ext.iconUrl,
+              baseUrl: ext.baseUrl,
+              lang: ext.lang,
+              isNsfw: ext.isNsfw ?? false,
+            ),
+          )
+          .toList();
+
+      final allSources = [...inbuilt, ...extensions];
+      try {
+        final prefs = ref.read(sharedPreferencesProvider);
+        final order = prefs.getStringList('source_order_MANGA') ?? [];
+        if (order.isNotEmpty) {
+          final orderMap = {for (int i = 0; i < order.length; i++) order[i]: i};
+          allSources.sort((a, b) {
+            final indexA = orderMap[a.id] ?? 9999;
+            final indexB = orderMap[b.id] ?? 9999;
+            return indexA.compareTo(indexB);
+          });
+        }
+      } catch (_) {}
+      return allSources;
+    } catch (e) {
+      return inbuilt;
+    }
+  },
+  name: 'availableMangaSourcesProvider',
 );
 
 final availableNovelSourcesProvider = FutureProvider<List<SourceInfo>>(

@@ -1,3 +1,5 @@
+> Historical Bhavesh 1.0.0 workstream status. ShonenX+ 2.0.0 intentionally restores manga support and changes the download/reader/player paths; see [current release report](shonenxplus-release.md) and [compatibility report](compat-report.md). Unfinished matching/global-search and comprehensive accessibility work below remains outstanding unless the current report explicitly supersedes it.
+
 # Implementation record
 
 ## A — Anime-only extension boundary

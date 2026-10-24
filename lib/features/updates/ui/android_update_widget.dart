@@ -84,7 +84,7 @@ class _AndroidUpdateWidgetState extends State<AndroidUpdateWidget> {
 
       final file = File('${dir.path}/${_bestAsset!.name}');
       final request = http.Request('GET', Uri.parse(_bestAsset!.downloadUrl));
-      request.headers['User-Agent'] = 'Bhavesh-App';
+      request.headers['User-Agent'] = 'ShonenX+-App';
 
       final response = await http.Client().send(request);
       final totalBytes = response.contentLength ?? _bestAsset!.size;

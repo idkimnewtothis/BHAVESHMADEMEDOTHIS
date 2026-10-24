@@ -70,13 +70,11 @@ class ExtensionAdapter {
     final lower = url.toLowerCase();
     final engine = engineId.replaceAll('-desktop', '').toLowerCase();
 
-    if (engine == 'aniyomi' || engine == 'tachiyomi') {
+    if (engine == 'aniyomi' || engine == 'tachiyomi' || engine == 'mihon') {
       if (!lower.endsWith('.json') &&
           !lower.endsWith('.pb') &&
           !lower.endsWith('.pb.gz')) {
-        url = url.endsWith('/')
-            ? '${url}index.min.json'
-            : '$url/index.min.json';
+        url = url.endsWith('/') ? '${url}repo.json' : '$url/repo.json';
       }
     } else if (engine == 'mangayomi') {
       if (!lower.endsWith('.json')) {
@@ -196,8 +194,11 @@ class ExtensionAdapter {
     String engineId,
     bridge.ItemType type,
   ) async {
-    if (engineId != 'aniyomi' || type != bridge.ItemType.anime) {
-      throw UnsupportedError('Only Aniyomi anime repositories are supported.');
+    if (!((engineId == 'aniyomi' && type == bridge.ItemType.anime) ||
+        (engineId == 'mihon' && type == bridge.ItemType.manga))) {
+      throw UnsupportedError(
+        'Choose Aniyomi for anime or Mihon for manga repositories.',
+      );
     }
     final normalizedUrl = normalizeRepoUrl(url, engineId);
     final manager = _resolveManager(engineId);

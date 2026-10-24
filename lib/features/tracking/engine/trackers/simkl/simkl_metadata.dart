@@ -108,7 +108,7 @@ mixin SimklMetadata on BaseTracker implements RemoteTracker {
         url,
         queryParameters: {
           'client_id': clientId,
-          'app-name': 'Bhavesh',
+          'app-name': 'ShonenX+',
           'app-version': '1.0',
         },
         headers: _headers,

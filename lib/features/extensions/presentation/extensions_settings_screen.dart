@@ -231,7 +231,7 @@ class _ExtensionsSettingsScreenState
   }
 
   Widget _buildEngineCapsule(ColorScheme cs, double roundness) {
-    const engines = ['All', 'Aniyomi'];
+    const engines = ['All', 'Aniyomi', 'Mihon'];
     final isAll = _selectedEngineFilter == 'All';
 
     return PopupMenuButton<String>(
@@ -635,6 +635,12 @@ class _ExtensionsSettingsScreenState
                 'Anime APK extensions',
                 Icons.video_library_rounded,
               ),
+              (
+                'mihon',
+                'Mihon',
+                'Manga APK extensions',
+                Icons.menu_book_rounded,
+              ),
             ];
 
             return AppBottomSheet(
@@ -649,7 +655,7 @@ class _ExtensionsSettingsScreenState
                       vertical: 4,
                     ),
                     child: Text(
-                      'Enable Aniyomi anime extensions in your catalogs and search.',
+                      'Enable Aniyomi anime and Mihon manga extensions in your catalogs and search.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: cs.onSurfaceVariant,
                         height: 1.3,

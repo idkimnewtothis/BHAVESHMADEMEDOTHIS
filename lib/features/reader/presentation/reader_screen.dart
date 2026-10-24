@@ -35,7 +35,11 @@ class ReaderScreen extends ConsumerStatefulWidget {
 
 class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   late final FocusNode _focusNode;
-  late final MediaArgs _matchArgs;
+  late MediaArgs _matchArgs;
+  List<ChapterPage>? _displayedPages;
+  ReaderDirection? _displayedDirection;
+  Widget? _cachedReaderView;
+  Object? _cachedReaderInputs;
   late PageController _pageController;
   GlobalKey<ReaderWebtoonViewState> _webtoonKey = GlobalKey();
 
@@ -61,7 +65,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   @override
   void didUpdateWidget(covariant ReaderScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.mode.episode.id != widget.mode.episode.id) {
+    if (oldWidget.mode != widget.mode) {
+      _matchArgs = MediaArgs.fromMedia(widget.mode.media);
+      _displayedPages = null;
       _webtoonKey = GlobalKey<ReaderWebtoonViewState>();
       final startPage = widget.mode.startPosition == -1
           ? 0
@@ -189,6 +195,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
     if (adjacentEps.isEmpty) return;
 
+    adjacentEps.sort((a, b) => a.number.compareTo(b.number));
     final targetNum = next ? adjacentEps.first.number : adjacentEps.last.number;
     final candidates = adjacentEps.where((e) => e.number == targetNum).toList();
 
@@ -401,8 +408,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     ReaderThemeInfo themeInfo,
     ReaderState state,
   ) {
+    final inputs = (
+      pages,
+      prefs.direction,
+      prefs.scaleType,
+      themeInfo.textColor,
+      widget.mode,
+    );
+    if (_cachedReaderInputs == inputs && _cachedReaderView != null) {
+      return _cachedReaderView!;
+    }
+    _cachedReaderInputs = inputs;
     if (prefs.direction == ReaderDirection.webtoon) {
-      return ReaderWebtoonView(
+      return _cachedReaderView = ReaderWebtoonView(
         key: _webtoonKey,
         pages: pages,
         initialPage: state.currentPage,
@@ -413,14 +431,21 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       );
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_pageController.hasClients &&
-          _pageController.page?.round() != state.currentPage) {
-        _pageController.jumpToPage(state.currentPage);
-      }
-    });
+    // Position only when loading a chapter or changing reader mode. A rebuild
+    // during a swipe must never jump the controller back to an older page.
+    if (!identical(_displayedPages, pages) ||
+        _displayedDirection != prefs.direction) {
+      _displayedPages = pages;
+      _displayedDirection = prefs.direction;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _pageController.hasClients) {
+          final current = ref.read(readerProvider(widget.mode)).currentPage;
+          _pageController.jumpToPage(current);
+        }
+      });
+    }
 
-    return ReaderPageView(
+    return _cachedReaderView = ReaderPageView(
       key: ValueKey('${widget.mode.episode.id}_${prefs.direction.name}'),
       pages: pages,
       controller: _pageController,

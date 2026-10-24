@@ -91,7 +91,9 @@ class _ReaderPageViewState extends State<ReaderPageView> {
         panEnabled: _isZoomed,
         scaleEnabled: scaleEnabled,
         child: PageView.builder(
-          physics: const BouncingScrollPhysics(),
+          physics: _isZoomed || scaleEnabled
+              ? const NeverScrollableScrollPhysics()
+              : const ClampingScrollPhysics(),
           controller: widget.controller,
           reverse: widget.direction == ReaderDirection.rtl,
           allowImplicitScrolling: true,

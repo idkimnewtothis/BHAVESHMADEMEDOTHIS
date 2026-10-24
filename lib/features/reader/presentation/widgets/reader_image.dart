@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:shonenx/shared/widgets/smart_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shonenx/features/reader/providers/reader_prefs_provider.dart';
@@ -27,7 +28,32 @@ class ReaderImage extends StatelessWidget {
       fit = BoxFit.contain;
     }
 
+    if (url.startsWith('/') || url.startsWith('file:')) {
+      return Image.file(
+        File(url.startsWith('file:') ? Uri.parse(url).toFilePath() : url),
+        fit: fit,
+        width: double.infinity,
+        cacheWidth: 1400,
+        frameBuilder: (context, child, frame, synchronous) => frame == null
+            ? SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.8,
+                child: const Center(child: CircularProgressIndicator()),
+              )
+            : child,
+        errorBuilder: (context, error, stack) => SizedBox(
+          height: 200,
+          child: Center(
+            child: Text(
+              'Page ${index + 1} is missing. Download this chapter again.',
+            ),
+          ),
+        ),
+      );
+    }
     return SmartImage(
+      fadeInDuration: Duration.zero,
+      fadeOutDuration: Duration.zero,
+      placeholderFadeInDuration: Duration.zero,
       imageUrl: url,
       httpHeaders: headers,
       fit: fit,

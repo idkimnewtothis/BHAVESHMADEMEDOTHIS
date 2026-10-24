@@ -50,6 +50,26 @@ class DownloadsScreen extends ConsumerWidget {
       length: 2,
       child: AppScaffold(
         title: 'Downloads',
+        actions: [
+          IconButton(
+            tooltip: 'Select 1DM folder and sync',
+            icon: const Icon(Icons.folder_shared_outlined),
+            onPressed: () async {
+              try {
+                await ref.read(downloadManagerProvider.future);
+                await ref
+                    .read(downloadManagerProvider.notifier)
+                    .chooseExternalFolder();
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Folder sync failed: $e')),
+                  );
+                }
+              }
+            },
+          ),
+        ],
         barBottom: TabBar(
           indicatorColor: colors.primary,
           indicatorSize: TabBarIndicatorSize.tab,
@@ -115,7 +135,7 @@ class DownloadsScreen extends ConsumerWidget {
 
   Future<void> _addTestDownload(BuildContext context, WidgetRef ref) async {
     final dir = await getApplicationDocumentsDirectory();
-    final saveDir = Directory('${dir.path}/Bhavesh/Downloads');
+    final saveDir = Directory('${dir.path}/ShonenX+/Downloads');
     if (!await saveDir.exists()) await saveDir.create(recursive: true);
 
     final ts = DateTime.now().millisecondsSinceEpoch;
@@ -710,7 +730,7 @@ class _DownloadedFilesTabState extends ConsumerState<_DownloadedFilesTab> {
                     children: [
                       Icon(Icons.play_arrow_rounded, size: 20),
                       SizedBox(width: 12),
-                      Text('Play in Bhavesh'),
+                      Text('Play in ShonenX+'),
                     ],
                   ),
                 ),

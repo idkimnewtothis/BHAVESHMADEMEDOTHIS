@@ -1,15 +1,10 @@
-# Bhavesh
+# ShonenX+
 
-Independent Android anime app derived from ShonenX, licensed under GPL-3.0.
+An independent GPL-3.0 Android app based on ShonenX. Version **2.0.0+2**, application ID **io.github.idkimnewtothis.shonenxplus**, with a new release signing key. It installs alongside the previous Bhavesh app; it does not replace that app or automatically migrate its private data.
 
-- Application ID: `io.github.idkimnewtothis.bhavesh`
-- App version: `1.0.0+1`
-- Target: ARM64 Android 8.0+ (API 26)
-- New private release signing key; unrelated to the upstream app's identity/key.
+## Install on a phone
 
-## Install on your phone
-
-GitHub publishing is blocked by Git authentication, so the requested fallback assets are committed under [dist/1.0.0](dist/1.0.0/). The coding task also provides direct downloads of the joiner, three parts and manifest. No GitHub release URL is claimed.
+Release delivery consists of `apk-joiner.html`, every `shonenxplus-2.0.0.part-NNN.bin`, and `shonenxplus-2.0.0.manifest.json`. The parts come from the signed ARM64 release APK. The joiner validates part sizes and SHA-256 hashes, then the assembled APK hash, offline.
 
 1. Download apk-joiner.html, every part, and the manifest.
 2. Open apk-joiner.html from Downloads in your browser.
@@ -17,73 +12,60 @@ GitHub publishing is blocked by Git authentication, so the requested fallback as
 4. Tap Download APK. If Android blocks the install, allow installs from your browser. This is usually under Settings → Apps → Special app access → Install unknown apps.
 5. Open the APK from Downloads and tap Install.
 
-The joiner works offline, stores nothing, verifies each part and the complete APK, and refuses damaged or incomplete downloads. Keep the manifest with its corresponding parts. The download requires enough free phone storage for the parts and assembled APK.
+Use all files from the same version. A mismatched, missing, duplicate or damaged part is rejected. When GitHub publication is unavailable, assets are committed under `dist/2.0.0/` and delivered through this task's Outputs, as with the previous version.
 
-## Extension store
+## Extension setup
 
-Open Settings → Extensions → Manage repositories. Add the repository index URL:
+Open **Settings → Extensions → Repositories**. Select **Aniyomi / Anime** or **Mihon / Manga**, and add an HTTPS repository metadata URL. Review its signing certificate at the first install. Android's package installer handles installation and removal; APK signers must match repository metadata.
 
-```
-https://raw.githubusercontent.com/yuzono/anime-repo/repo/index.min.json
-```
+- Manga: `https://raw.githubusercontent.com/keiyoushi/extensions/repo/repo.json`
+- Anime test repository: `https://raw.githubusercontent.com/yuzono/anime-repo/repo/repo.json`
+- Repository deep links: `aniyomi://add-repo?url=…`, `aniyomi://extension-store?url=…`, `mihon://add-repo?url=…`, and `tachiyomi://add-repo?url=…`.
 
-Both `aniyomi://add-repo?url=...` and `aniyomi://extension-store?url=...` are handled. Approve the repository signing fingerprint on first installation, then confirm installation in Android and refresh the store. A certificate mismatch is blocked. Android may require permission to install apps from Bhavesh.
+Mihon manga libraries **1.4/1.6** and Aniyomi anime libraries **14/16/17** are accepted. Unknown versions are rejected with an explanation. Sources run in parent-first Android class loaders. Load errors remain visible in Sources. Keiyoushi's current `repo.json` points to `index.pb`; the old JSON index now contains “Outdated App” placeholders. No site-specific search or reader behavior is embedded in core UI.
 
-Only Aniyomi **anime** APKs are accepted. Lib versions 14, 16 and 17 have host entry points; other versions are rejected with a reason. Static checks of the four selected extensions are documented in [the compatibility report](docs/compat-report.md). Static ABI checks do not prove source website compatibility. Manga reader/library code remains in the shell, with **No manga sources in this build**.
+See [upstream versions](docs/upstream-versions.md), [API maintenance](docs/upstream-maintenance.md), and [compatibility results](docs/compat-report.md). An ABI pass does not establish live source compatibility. Login, CAPTCHA, payment, and DRM requirements are unsupported.
 
-## Current limitations
+## Reading and offline downloads
 
-This is an experimental build, not a claim that all original workstreams are complete. See [workstream status](docs/workstreams.md) and [compatibility](docs/compat-report.md).
+- Use the manga chapter list's scanlator selector and sort controls. “All scanlators” retains alternate releases.
+- Batch Download works for manga chapters and anime episodes. The queue persists title, source, chapter/episode identity, file paths and state. Completed entries remain available.
+- Open a title and enable **Offline chapters** or **Offline episodes**. This view does not require source discovery. Save titles in your Library for convenient access without searching online.
+- Pause, resume/retry, cancel and delete downloads. Default concurrency is two complete jobs; failures retry with backoff. Interrupted jobs resume on the next launch. A foreground data-sync service supports active Android downloads. Downloads use app-specific storage, so uninstalling ShonenX+ removes its internal downloads.
+- Offline reader pages preserve their order and reading position. Offline video entries retain title/episode identity and local subtitle tracks. Play/pause stays available while buffering; replay seeks to the beginning.
 
-- Android installation, source calls, title/episode matrix, restart/reboot behavior and app screenshots are UNVERIFIED: no connected device or accelerated emulator is available.
-- Multi-source streaming search, per-source retry/cancellation, confirmed-match persistence/overrides, full source-switch identity handling, foreground download service and comprehensive accessibility/reduced-motion work remain incomplete.
-- Android downloads use app-specific storage. Arbitrary filesystem directories are not offered on Android; no broad storage permission is requested.
-- Login, payment and challenge responses are unsupported. No challenge bypass is implemented. No playback or real-video download checks were performed.
-- Tracker credentials are not bundled; register your own tracker application using `bhavesh://callback` and use the custom credentials settings.
-- Upstream announcement configuration is disconnected by default. Optional `BHAVESH_CONFIG_URL` is a build-time setting. Crash logging remains local; no telemetry service was added.
+### 1DM integration
+
+Enable 1DM in Download Settings. ShonenX+ persists each handoff rather than treating it as a finished download. Chapter pages use deterministic names; anime files and subtitle names are associated with their title entry.
+
+In **Downloads**, tap **Select 1DM folder and sync** and grant access to the specific directory where 1DM writes its completed files. Android may prevent selecting the Downloads root; select 1DM's subfolder. Keep the filenames supplied by ShonenX+. The app scans on resume and every 30 seconds while running, imports stable completed files into app storage, and attaches matching subtitles to the player. It does not delete the originals. Duplicate filenames in the granted tree are rejected rather than guessed.
+
+1DM's intents, actual completion/rename behavior, and phone permission flows need device validation. There is no verified completion callback API. Files still being written, renamed files, or files outside the granted folder cannot be reliably auto-imported. External download sync is not claimed to run while ShonenX+ is force-stopped.
 
 ## Build and signing
 
-Use Flutter **3.41.9**, JDK **21**, Android SDK/build tools **36**, and Flutter's NDK **28.2.13676358**. The initial dependency build also needs Rust (rhttp), CMake and NDK 27 for plugin builds. The shell's original release shrinking/minification is retained. QuickJS is linked with 16 KB page flags.
+Use the versions in `.fvmrc` and Android Gradle files. The verified sandbox uses Flutter 3.41.9, Dart 3.11.5, JDK21, SDK/build-tools36.0.0 and NDK28.2.13676358. Initialize the public package submodules and run `flutter pub get`.
 
-Initialize the public package submodules individually, then resolve dependencies:
-
-```sh
-git submodule update --init packages/byte_me packages/commentum_client packages/flutter_web_auth
-flutter pub get
-```
-
-The unused, inaccessible upstream `shonenx-sources` gitlink and stale `byte_me_ecosystem` mapping were removed. The Android anime bridge is vendored.
-
-Generate a separate keystore outside the checkout. Keytool prompts for passwords:
-
-```sh
-keytool -genkeypair -keystore /private/path/bhavesh-release.jks \
-  -alias bhavesh-release -keyalg RSA -keysize 4096 -validity 10000
-```
-
-Create ignored `android/key.properties` with `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`. Back up the private key/password securely: app updates require the same key. Never commit or upload signing files to a release. The delivered build's public certificate fingerprint is recorded in the release report.
+Generate a private release keystore with `keytool -genkeypair -storetype PKCS12 -keyalg RSA -keysize 4096 -validity 10000`. Keep it outside the repository. Configure ignored `android/key.properties` with `storeFile`, `storePassword`, `keyPassword`, and `keyAlias`. Back up the keystore securely: future updates of this application ID require the same key. Never commit keys or tracker credentials.
 
 ```sh
 flutter analyze lib test
 flutter test
 flutter build apk --release --target-platform android-arm64
 python3 scripts/verify_apk.py build/app/outputs/flutter-apk/app-release.apk
-python3 tools/verify-extension-abi.py --host build/app/outputs/flutter-apk/app-release.apk /path/to/test-extensions/*.apk
-python3 scripts/split_apk.py build/app/outputs/flutter-apk/app-release.apk --output dist/1.0.0
-python3 scripts/split_apk.py dist/1.0.0/bhavesh-1.0.0.manifest.json --verify \
-  --original build/app/outputs/flutter-apk/app-release.apk --output /tmp/joined.apk
-python3 scripts/verify_apk.py /tmp/joined.apk
+python3 tools/verify-extension-abi.py --host build/app/outputs/flutter-apk/app-release.apk /path/to/test-extension.apk
+python3 scripts/split_apk.py build/app/outputs/flutter-apk/app-release.apk --output dist/2.0.0
+python3 scripts/split_apk.py dist/2.0.0/shonenxplus-2.0.0.manifest.json --verify --original build/app/outputs/flutter-apk/app-release.apk --output /tmp/joined.apk
 node test/delivery/joiner.test.js
-python3 test/delivery/abi_checker_test.py
-python3 test/delivery/browser_joiner.py dist/1.0.0/bhavesh-1.0.0.manifest.json --download /tmp/browser-joined.apk
+python3 test/delivery/browser_joiner.py dist/2.0.0/shonenxplus-2.0.0.manifest.json --download /tmp/browser-joined.apk
 python3 scripts/verify_apk.py /tmp/browser-joined.apk
+python3 scripts/check_mihon_upstream.py --local-only
 ```
 
-The verifier defaults to the published app’s public signing-certificate fingerprint. For a separately generated developer key, pass its verified fingerprint with `--certificate`; never substitute a different key for a published app update.
+Linux tests need the package's host `librhttp.so` on `LD_LIBRARY_PATH`; the download persistence test uses the Linux Isar library from the resolved pub cache. The APK verifier's default certificate identifies this release; use `--certificate` for your own build. Preserve the current release minification/shrinking and native 16 KB linker settings. No ABI was removed to reduce size.
 
-Expose `apksigner` on PATH (or pass `--apksigner`) and set `ANDROID_HOME`. Host Flutter tests using rhttp require its Linux `librhttp.so` on `LD_LIBRARY_PATH`; build it with `RUSTFLAGS='--cfg reqwest_unstable' cargo build --locked` in the resolved rhttp `rust/` directory. On an 8 GB builder, use a 3 GB Gradle heap, two workers and in-process Kotlin compilation to avoid an OOM kill.
+## Verification limits
 
-## Credits
+See [release report](docs/shonenxplus-release.md) for actual checks, hashes and delivery status. No real video playback or video downloads were tested. Android UI smoothness, installation/update/uninstall, source search/details/pages, foreground service lifecycle and 1DM integration remain UNVERIFIED without an Android device. Tests cover fake sources and local files; they do not establish that every extension or device works.
 
-[Upstream source/version audit](docs/upstream-versions.md), [original README](UPSTREAM_README.md), [third-party credits](THIRD_PARTY.md), and [GPL-3.0 license](LICENSE). Credits are also available in About.
+Crash diagnostics stay local. Tracker credentials are not bundled. Upstream attribution is retained in [UPSTREAM_README.md](UPSTREAM_README.md), [THIRD_PARTY.md](THIRD_PARTY.md), LICENSE and the About screen.

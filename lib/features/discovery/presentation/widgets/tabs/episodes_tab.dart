@@ -1,3 +1,4 @@
+import 'package:shonenx/features/downloads/presentation/title_downloads.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -39,6 +40,8 @@ class EpisodesTabWidget extends ConsumerStatefulWidget {
 
 class _EpisodesTabWidgetState extends ConsumerState<EpisodesTabWidget>
     with AutomaticKeepAliveClientMixin {
+  bool _offline = false;
+
   @override
   bool get wantKeepAlive => true;
 
@@ -46,6 +49,30 @@ class _EpisodesTabWidgetState extends ConsumerState<EpisodesTabWidget>
   Widget build(BuildContext context) {
     super.build(context);
 
+    return Column(
+      children: [
+        SwitchListTile.adaptive(
+          title: Text(
+            widget.media.type == MediaType.MANGA
+                ? 'Offline chapters'
+                : 'Offline episodes',
+          ),
+          subtitle: const Text(
+            'Read or watch saved downloads without a source connection',
+          ),
+          value: _offline,
+          onChanged: (value) => setState(() => _offline = value),
+        ),
+        Expanded(
+          child: _offline
+              ? TitleDownloads(media: widget.media)
+              : _online(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _online(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final sourcesAsync = ref.watch(widget.media.type.availableSourcesProvider);
 

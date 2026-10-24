@@ -226,7 +226,7 @@ class MediaKitEngine implements VideoEngine {
       }),
       _player.stream.buffering.listen((buffering) {
         if (!_disposed) {
-          if (buffering) {
+          if (buffering && _player.state.playing) {
             statusNotifier.value = PlayerStatus.buffering;
           } else {
             statusNotifier.value = _player.state.playing

@@ -685,13 +685,12 @@ class _SourcesTabState extends ConsumerState<SourcesTab> {
   }
 
   Widget _buildContent(BuildContext context, List<UnifiedSource> sources) {
-    if (widget.type == MediaType.MANGA) {
-      return const Center(child: Text('No manga sources in this build'));
-    }
     final errors = <String>[];
     AniyomiExtensions? manager;
     if (Get.isRegistered<bridge.ExtensionManager>()) {
-      final candidate = Get.find<bridge.ExtensionManager>().findById('aniyomi');
+      final candidate = Get.find<bridge.ExtensionManager>().findById(
+        widget.type == MediaType.MANGA ? 'mihon' : 'aniyomi',
+      );
       if (candidate is AniyomiExtensions) {
         manager = candidate;
         errors.addAll(

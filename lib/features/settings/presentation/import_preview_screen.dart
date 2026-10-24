@@ -91,7 +91,7 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
                     color: colorScheme.primary,
                   ),
                   title: const Text(
-                    'Bhavesh Backup',
+                    'ShonenX+ Backup',
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(

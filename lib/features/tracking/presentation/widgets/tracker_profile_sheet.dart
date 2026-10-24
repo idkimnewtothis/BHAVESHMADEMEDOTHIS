@@ -1180,7 +1180,7 @@ class _TrackerProfileSheetState extends ConsumerState<TrackerProfileSheet> {
               Icon(Icons.analytics_outlined, size: 18, color: cs.primary),
               const SizedBox(width: 8),
               Text(
-                'Bhavesh Local Telemetry',
+                'ShonenX+ Local Telemetry',
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -1189,7 +1189,7 @@ class _TrackerProfileSheetState extends ConsumerState<TrackerProfileSheet> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Device-only interaction analytics powered by Bhavesh Engine',
+            'Device-only interaction analytics powered by ShonenX+ Engine',
             style: theme.textTheme.labelSmall?.copyWith(
               color: cs.onSurfaceVariant,
             ),

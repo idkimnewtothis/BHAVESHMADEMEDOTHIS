@@ -140,10 +140,9 @@ class ProgressTracker {
 
     final media = context.media;
     final activeEpisode = context.activeEpisode;
-    final activeServer = context.activeServer;
     final sourceInfo = context.sourceInfo;
 
-    if (activeServer == null || media == null) return;
+    if (media == null || activeEpisode == null) return;
     if (_ref.read(securityPrefsProvider).incognitoMode) return;
 
     final engine = context.engine;
@@ -163,17 +162,17 @@ class ProgressTracker {
 
     final entry = HistoryEntry()
       ..mediaType = MediaType.ANIME.id
-      ..itemNumber = activeEpisode?.number ?? 1
+      ..itemNumber = activeEpisode.number
       ..mediaId = media.id
       ..mediaIdMal = media.idMal
       ..externalIds = media.externalIds
       ..mediaTitle = media.title.getPreferedTitle
-      ..itemTitle = activeEpisode?.title
+      ..itemTitle = activeEpisode.title
       ..cover = media.cover
       ..banner = media.banner
       ..thumbnailUrl = thumbnail.isNotEmpty
           ? thumbnail
-          : activeEpisode?.thumbnailUrl
+          : activeEpisode.thumbnailUrl
       ..progress = position.inMilliseconds
       ..total = duration.inMilliseconds
       ..sourceId = sourceInfo?.id ?? media.sourceId
@@ -184,7 +183,7 @@ class ProgressTracker {
     await _ref.read(historyRepositoryProvider).saveProgress(entry);
 
     // Also sync to tracking services (MAL, AniList, etc.)
-    if (activeEpisode != null) {
+    {
       await _ref
           .read(syncEngineProvider)
           .processPlayback(

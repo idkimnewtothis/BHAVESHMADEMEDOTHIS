@@ -22,8 +22,9 @@ import uy.kohesive.injekt.api.addSingleton
 import java.io.File
 import java.security.MessageDigest
 
-/** Only installed, explicitly trusted Aniyomi anime APKs enter this runtime. */
+/** Only installed, certificate-verified anime or manga APKs enter this runtime. */
 class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin {
+    private lateinit var manga: MangaRuntime
     private lateinit var context: Context
     private lateinit var channel: MethodChannel
     private lateinit var hostChannel: MethodChannel
@@ -35,6 +36,7 @@ class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin {
     private val supported = setOf(14, 16, 17)
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
+        manga = MangaRuntime(context)
         Injekt.addSingleton(context)
         Injekt.addSingleton(context.applicationContext as android.app.Application)
         val network = NetworkHelper(context)
@@ -75,9 +77,17 @@ class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin {
         }.toSet()
     }
     private fun validate(info: PackageInfo): Int {
-        require(info.packageName.startsWith("eu.kanade.tachiyomi.animeextension.")) { "Only Aniyomi anime APKs can be installed or loaded" }
+        val isManga = info.packageName.startsWith("eu.kanade.tachiyomi.extension.")
+        require(isManga || info.packageName.startsWith("eu.kanade.tachiyomi.animeextension.")) { "Not a supported extension package" }
         val features = info.reqFeatures.orEmpty().map { it.name }
-        require("tachiyomi.animeextension" in features && "tachiyomi.extension" !in features) { "Not an anime-only extension APK" }
+        require((if(isManga) "tachiyomi.extension" else "tachiyomi.animeextension") in features) { "Extension feature is missing" }
+        if (isManga) {
+            val metadata = info.applicationInfo?.metaData ?: error("Extension metadata missing")
+            val version = metadata.get("tachiyomix.extensionLib")?.toString()?.toDoubleOrNull()
+                ?: info.versionName?.substringBeforeLast('.')?.toDoubleOrNull()
+            require(version in setOf(1.4, 1.6)) { "Found manga lib $version; supported libs: 1.4, 1.6" }
+            return (version!! * 10).toInt()
+        }
         val meta = info.applicationInfo?.metaData ?: error("Extension metadata is missing")
         val lib = meta.getInt("aniyomix.extensionLib", 0).takeIf { it != 0 }
             ?: info.versionName?.substringBeforeLast('.')?.toIntOrNull()
@@ -117,10 +127,15 @@ class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin {
     }
     private suspend fun execute(call: MethodCall): Any? {
         val args = call.arguments as? Map<*, *> ?: emptyMap<Any,Any>()
-        require(args["isAnime"] != false && !call.method.contains("Manga")) { "No manga sources in this build" }
+
         when(call.method) {
             "getInstalledAnimeExtensions" -> return load()
-            "getLoadFailures" -> return synchronized(this) { failures.toList() }
+            "getInstalledMangaExtensions" -> return manga.load(context.packageManager.getInstalledPackages(flags)) { info ->
+                validate(info)
+                val expected = trust.getString(info.packageName, null) ?: error("Not trusted. Install from a trusted repository first.")
+                require(certificates(info) == setOf(expected)) { "Signing certificate mismatch" }
+            }
+            "getLoadFailures" -> return synchronized(this) { failures.toList() + manga.failures.toList() }
             "inspectApk", "installVerifiedApk" -> {
                 val file = File(args["path"] as String)
                 val info = context.packageManager.getPackageArchiveInfo(file.path, flags) ?: error("Invalid APK")
@@ -140,13 +155,14 @@ class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin {
             }
             "uninstallAnimeExtension" -> {
                 val pkg = args["package"] as String
-                require(pkg.startsWith("eu.kanade.tachiyomi.animeextension."))
+                require(pkg.startsWith("eu.kanade.tachiyomi.animeextension.") || pkg.startsWith("eu.kanade.tachiyomi.extension."))
                 withContext(Dispatchers.Main) { context.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:$pkg")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 return true
             }
-            "getPageList", "installSourceInternal" -> error("Only Android package installation of anime APKs is supported")
+            "installSourceInternal" -> error("Use the Android package installer")
             "stopHttpServer" -> return null
         }
+        if (args["isAnime"] == false) return manga.execute(call)
         val id = args["sourceId"] as? String ?: error("Source id is required")
         val loaded = sources[id] ?: run { load(); sources[id] } ?: error("Source $id is not installed or trusted")
         val source = loaded.source
@@ -175,7 +191,10 @@ class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin {
                     val input = args["episode"] as Map<*, *>
                     val episode = SEpisode.create().apply { url = input["url"] as String; name = input["name"] as? String ?: "" }
                     val videos = if(loaded.lib == 14) source.getVideoList(episode) else source.getHosterList(episode).flatMap { source.getVideoList(it) }
-                    videos.map { mapOf("url" to it.videoUrl, "quality" to it.quality, "originalUrl" to it.url) }
+                    videos.map { video -> mapOf("url" to video.videoUrl, "quality" to video.quality, "originalUrl" to video.url,
+                        "headers" to video.headers?.names()?.associateWith { video.headers[it] ?: "" },
+                        "subtitles" to video.subtitleTracks.map { mapOf("file" to it.url, "label" to it.lang) },
+                        "audios" to video.audioTracks.map { mapOf("file" to it.url, "label" to it.lang) }) }
                 }
                 else -> error("Unsupported anime source operation ${call.method}")
             }

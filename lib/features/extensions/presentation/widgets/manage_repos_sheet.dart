@@ -42,6 +42,7 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
     if (widget.autoAddManager != null &&
         [
           'aniyomi',
+          'mihon',
           'mangayomi',
           'cloudstream',
           'kotatsu',
@@ -69,6 +70,7 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
 
     if (![
       'aniyomi',
+      'mihon',
       'mangayomi',
       'cloudstream',
       'kotatsu',
@@ -83,7 +85,7 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
     } else if (widget.autoAddType != null &&
         widget.autoAddType!.toLowerCase() == 'anime') {
       _selectedType = bridge.ItemType.anime;
-    } else if (_selectedEngineId == 'kotatsu') {
+    } else if (_selectedEngineId == 'mihon') {
       _selectedType = bridge.ItemType.manga;
     } else {
       _selectedType = bridge.ItemType.anime;
@@ -239,7 +241,7 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
     }
   }
 
-  static const _availableEngines = [('aniyomi', 'Aniyomi')];
+  static const _availableEngines = [('aniyomi', 'Aniyomi'), ('mihon', 'Mihon')];
 
   Future<void> _confirmClearAllRepos() async {
     final roundness = GlobalUI.uiRoundness;
@@ -306,6 +308,8 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
     switch (id.replaceAll('-desktop', '').toLowerCase()) {
       case 'mangayomi':
         return 'Mangayomi';
+      case 'mihon':
+        return 'Mihon';
       case 'aniyomi':
         return 'Aniyomi';
       case 'cloudstream':
@@ -391,9 +395,9 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
           : () {
               setState(() {
                 _selectedEngineId = id;
-                if (id == 'kotatsu') {
+                if (id == 'mihon') {
                   _selectedType = bridge.ItemType.manga;
-                } else if (id == 'cloudstream') {
+                } else if (id == 'aniyomi') {
                   _selectedType = bridge.ItemType.anime;
                 }
               });
@@ -617,7 +621,7 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
                 segments: [
                   ButtonSegment<bridge.ItemType>(
                     value: bridge.ItemType.anime,
-                    enabled: !_isLoading && _selectedEngineId != 'kotatsu',
+                    enabled: !_isLoading && _selectedEngineId == 'aniyomi',
                     icon: const Icon(Icons.movie_filter_rounded, size: 18),
                     label: const Text(
                       'Anime',
@@ -629,7 +633,7 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
                   ),
                   ButtonSegment<bridge.ItemType>(
                     value: bridge.ItemType.manga,
-                    enabled: !_isLoading && _selectedEngineId != 'cloudstream',
+                    enabled: !_isLoading && _selectedEngineId == 'mihon',
                     icon: const Icon(Icons.menu_book_rounded, size: 18),
                     label: const Text(
                       'Manga',

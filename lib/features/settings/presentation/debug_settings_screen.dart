@@ -241,7 +241,7 @@ class DebugSettingsScreen extends ConsumerWidget {
   static final _mockRelease = GitHubRelease(
     id: 999999,
     tagName: 'v2.2.0-preview',
-    name: 'Bhavesh v2.2.0 (Preview Release)',
+    name: 'ShonenX+ v2.2.0 (Preview Release)',
     body:
         '### What\'s New in v2.2.0\n'
         '- **Windows In-App Updater**: Direct .exe download and auto-launch\n'
@@ -251,24 +251,24 @@ class DebugSettingsScreen extends ConsumerWidget {
     prerelease: true,
     draft: false,
     publishedAt: DateTime(2026, 9, 8),
-    htmlUrl: 'https://github.com/roshancodespace/Bhavesh/releases',
+    htmlUrl: 'https://github.com/roshancodespace/ShonenX+/releases',
     assets: const [
       ReleaseAsset(
-        name: 'Bhavesh-x86_64-2.2.0-Installer.exe',
+        name: 'ShonenX+-x86_64-2.2.0-Installer.exe',
         downloadUrl:
-            'https://github.com/roshancodespace/Bhavesh/releases/download/v2.2.0/Bhavesh-x86_64-2.2.0-Installer.exe',
+            'https://github.com/roshancodespace/ShonenX+/releases/download/v2.2.0/ShonenX+-x86_64-2.2.0-Installer.exe',
         size: 50855936,
       ),
       ReleaseAsset(
-        name: 'Bhavesh-linux.zip',
+        name: 'ShonenX+-linux.zip',
         downloadUrl:
-            'https://github.com/roshancodespace/Bhavesh/releases/download/v2.2.0/Bhavesh-linux.zip',
+            'https://github.com/roshancodespace/ShonenX+/releases/download/v2.2.0/ShonenX+-linux.zip',
         size: 54525952,
       ),
       ReleaseAsset(
-        name: 'Bhavesh-arm64-v8a-release.apk',
+        name: 'ShonenX+-arm64-v8a-release.apk',
         downloadUrl:
-            'https://github.com/roshancodespace/Bhavesh/releases/download/v2.2.0/Bhavesh-arm64-v8a-release.apk',
+            'https://github.com/roshancodespace/ShonenX+/releases/download/v2.2.0/ShonenX+-arm64-v8a-release.apk',
         size: 33554432,
       ),
     ],

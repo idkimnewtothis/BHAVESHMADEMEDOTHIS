@@ -13,6 +13,37 @@ class DownloadRepository {
     });
   }
 
+  Future<void> updateProgress(DownloadTask incoming) async {
+    await _isar.writeTxn(() async {
+      final current = await _isar.downloadTasks.get(incoming.id);
+      if (current == null || current.status != DownloadStatus.downloading) {
+        return;
+      }
+      current.progress = incoming.progress;
+      current.downloadedBytes = incoming.downloadedBytes;
+      current.totalBytes = incoming.totalBytes;
+      current.updatedAt = DateTime.now();
+      await _isar.downloadTasks.put(current);
+    });
+  }
+
+  /// Ignore a scan result if the task changed while Android copied its files.
+  Future<void> updateExternalResult(DownloadTask incoming) async {
+    await _isar.writeTxn(() async {
+      final current = await _isar.downloadTasks.get(incoming.id);
+      if (current == null ||
+          !current.external ||
+          current.updatedAt != incoming.updatedAt ||
+          current.status == DownloadStatus.canceled ||
+          current.status == DownloadStatus.downloading ||
+          current.status == DownloadStatus.pending) {
+        return;
+      }
+      incoming.updatedAt = DateTime.now();
+      await _isar.downloadTasks.put(incoming);
+    });
+  }
+
   Future<void> deleteTask(Id id) async {
     await _isar.writeTxn(() async {
       await _isar.downloadTasks.delete(id);
@@ -42,6 +73,20 @@ class DownloadRepository {
         .statusEqualTo(DownloadStatus.completed)
         .findAll();
   }
+
+  Future<DownloadTask?> findEpisode(
+    String media,
+    String source,
+    String episode,
+  ) => _isar.downloadTasks
+      .filter()
+      .mediaIdEqualTo(media)
+      .sourceIdEqualTo(source)
+      .episodeIdEqualTo(episode)
+      .findFirst();
+
+  Future<List<DownloadTask>> getExternalTasks() =>
+      _isar.downloadTasks.filter().externalEqualTo(true).findAll();
 
   Stream<List<DownloadTask>> watchAllTasks() {
     return _isar.downloadTasks.where().sortByCreatedAtDesc().watch(

@@ -79,7 +79,7 @@ class AboutScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Bhavesh',
+                'ShonenX+',
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),

@@ -34,7 +34,7 @@ class _CenterControlsState extends ConsumerState<CenterControls> {
     }
     final theme = Theme.of(context);
 
-    final media = widget.controller.media;
+    final media = widget.controller.isOffline ? null : widget.controller.media;
     final episodes = media != null
         ? ref.watch(
                 episodesListProvider(
@@ -56,7 +56,8 @@ class _CenterControlsState extends ConsumerState<CenterControls> {
         final status = widget.engine.statusNotifier.value;
         final isBuffering =
             status == PlayerStatus.buffering || widget.playerState.isLoading;
-        final isPlaying = status == PlayerStatus.playing;
+        final isPlaying =
+            status == PlayerStatus.playing || status == PlayerStatus.buffering;
 
         return Stack(
           alignment: Alignment.center,
@@ -65,18 +66,18 @@ class _CenterControlsState extends ConsumerState<CenterControls> {
               Center(
                 child: CircularProgressIndicator(
                   constraints: const BoxConstraints(
-                    minHeight: 80,
-                    minWidth: 80,
+                    minHeight: 104,
+                    minWidth: 104,
                   ),
                   strokeWidth: 5,
                   color: theme.colorScheme.primary,
                 ),
               ),
             IgnorePointer(
-              ignoring: !widget.showControls || isBuffering,
+              ignoring: !widget.showControls || widget.playerState.isLoading,
               child: AnimatedOpacity(
                 curve: Curves.easeInOut,
-                opacity: (widget.showControls && !isBuffering) ? 1 : 0,
+                opacity: widget.showControls ? 1 : 0,
                 duration: Durations.medium2,
                 child: Center(
                   child: Row(
@@ -90,9 +91,7 @@ class _CenterControlsState extends ConsumerState<CenterControls> {
                       ),
                       PlayerPlayPauseButton(
                         isPlaying: isPlaying,
-                        onToggle: isPlaying
-                            ? widget.engine.pause
-                            : widget.engine.play,
+                        onToggle: widget.controller.togglePlayback,
                       ),
                       PlayerEpisodeNavButton(
                         isNext: true,

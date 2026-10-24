@@ -87,10 +87,6 @@ class AniyomiSourceMethods extends SourceMethods {
     });
 
     final parsed = await compute(parseVideos, List<dynamic>.from(result));
-    for (final v in parsed) {
-      print(
-          "[Aniyomi_Flutter] Video: title='${v.title}', quality='${v.quality}', url='${v.url}'");
-    }
     return parsed;
   }
 

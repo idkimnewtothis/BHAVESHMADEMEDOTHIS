@@ -218,7 +218,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Widget _buildWelcomePage(ThemeData theme, ColorScheme cs) {
     return _buildPageLayout(
-      title: 'Welcome to Bhavesh',
+      title: 'Welcome to ShonenX+',
       description:
           'Your premium, ad-free gateway to discovering and tracking the best anime and manga.',
       customIcon: SvgIcon(
@@ -1244,10 +1244,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final String description;
     if (inbuiltCount > 0) {
       description =
-          'Bhavesh includes $inbuiltCount inbuilt source(s) out of the box. You can significantly expand your library using community-built extensions.';
+          'ShonenX+ includes $inbuiltCount inbuilt source(s) out of the box. You can significantly expand your library using community-built extensions.';
     } else {
       description =
-          'Bhavesh relies on powerful community-built extensions to fetch content. You can install extensions later in settings to start watching.';
+          'ShonenX+ relies on powerful community-built extensions to fetch content. You can install extensions later in settings to start watching.';
     }
 
     return _buildPageLayout(
@@ -1284,7 +1284,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '• Install Aniyomi anime extensions from a repository you trust.\n• No manga sources in this build.\n\nNote: Bhavesh uses a minimal customized fork of AnymeXExtensionRuntimeBridge originally created by RyanYuuki.',
+                    '• Install Aniyomi anime extensions from a repository you trust.\n• No manga sources installed. Add a Mihon repository in Extensions.\n\nNote: ShonenX+ uses a minimal customized fork of AnymeXExtensionRuntimeBridge originally created by RyanYuuki.',
                     style: TextStyle(
                       fontSize: 13,
                       color: cs.onSurfaceVariant,
@@ -1347,7 +1347,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       title: 'Discord Rich Presence (Optional)',
       description: _isMobile
           ? 'Broadcast what you\'re watching or reading live to Discord on Mobile using Gateway Sync.'
-          : 'Bhavesh connects automatically to your running Discord desktop app. No login required!',
+          : 'ShonenX+ connects automatically to your running Discord desktop app. No login required!',
       customIcon: const SvgIcon(
         '''<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
             <path d="M0 0h24v24H0z" fill="none" />
@@ -1574,7 +1574,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               permission: Permission.notification,
               title: 'Allow Notifications',
               description:
-                  'Bhavesh needs notification access to keep you updated.',
+                  'ShonenX+ needs notification access to keep you updated.',
               rationale:
                   'This allows the app to show background download progress and notify you when new episodes of your tracked anime are released.',
             );
@@ -1586,7 +1586,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 permission: Permission.scheduleExactAlarm,
                 title: 'Exact Alarms',
                 description:
-                    'Allow Bhavesh to schedule precise notifications for release reminders.',
+                    'Allow ShonenX+ to schedule precise notifications for release reminders.',
                 rationale:
                     'Android restricts background tasks. Exact alarm permission ensures you receive notifications at the exact minute an episode airs, rather than hours later.',
               );

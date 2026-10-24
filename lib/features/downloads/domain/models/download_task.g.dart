@@ -17,74 +17,113 @@ const DownloadTaskSchema = CollectionSchema(
   name: r'DownloadTask',
   id: -8326932930248620171,
   properties: {
+    r'attempts': PropertySchema(id: 0, name: r'attempts', type: IsarType.long),
     r'createdAt': PropertySchema(
-      id: 0,
+      id: 1,
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
     r'downloadedBytes': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'downloadedBytes',
       type: IsarType.long,
     ),
+    r'episodeId': PropertySchema(
+      id: 3,
+      name: r'episodeId',
+      type: IsarType.string,
+    ),
     r'episodeNumber': PropertySchema(
-      id: 2,
+      id: 4,
       name: r'episodeNumber',
       type: IsarType.double,
     ),
+    r'episodeTitle': PropertySchema(
+      id: 5,
+      name: r'episodeTitle',
+      type: IsarType.string,
+    ),
+    r'error': PropertySchema(id: 6, name: r'error', type: IsarType.string),
+    r'external': PropertySchema(id: 7, name: r'external', type: IsarType.bool),
     r'fileName': PropertySchema(
-      id: 3,
+      id: 8,
       name: r'fileName',
       type: IsarType.string,
     ),
     r'headers': PropertySchema(
-      id: 4,
+      id: 9,
       name: r'headers',
       type: IsarType.objectList,
 
       target: r'DownloadHeader',
     ),
-    r'isM3u8': PropertySchema(id: 5, name: r'isM3u8', type: IsarType.bool),
-    r'mediaId': PropertySchema(id: 6, name: r'mediaId', type: IsarType.string),
+    r'isM3u8': PropertySchema(id: 10, name: r'isM3u8', type: IsarType.bool),
+    r'isManga': PropertySchema(id: 11, name: r'isManga', type: IsarType.bool),
+    r'mediaId': PropertySchema(id: 12, name: r'mediaId', type: IsarType.string),
+    r'mediaTitle': PropertySchema(
+      id: 13,
+      name: r'mediaTitle',
+      type: IsarType.string,
+    ),
+    r'pagePaths': PropertySchema(
+      id: 14,
+      name: r'pagePaths',
+      type: IsarType.stringList,
+    ),
     r'progress': PropertySchema(
-      id: 7,
+      id: 15,
       name: r'progress',
       type: IsarType.double,
     ),
     r'requiresProxy': PropertySchema(
-      id: 8,
+      id: 16,
       name: r'requiresProxy',
       type: IsarType.bool,
     ),
     r'savePath': PropertySchema(
-      id: 9,
+      id: 17,
       name: r'savePath',
       type: IsarType.string,
     ),
+    r'scanlator': PropertySchema(
+      id: 18,
+      name: r'scanlator',
+      type: IsarType.string,
+    ),
+    r'sourceId': PropertySchema(
+      id: 19,
+      name: r'sourceId',
+      type: IsarType.string,
+    ),
+    r'sourceName': PropertySchema(
+      id: 20,
+      name: r'sourceName',
+      type: IsarType.string,
+    ),
     r'status': PropertySchema(
-      id: 10,
+      id: 21,
       name: r'status',
       type: IsarType.byte,
       enumMap: _DownloadTaskstatusEnumValueMap,
     ),
     r'subtitles': PropertySchema(
-      id: 11,
+      id: 22,
       name: r'subtitles',
       type: IsarType.objectList,
 
       target: r'DownloadSubtitle',
     ),
     r'totalBytes': PropertySchema(
-      id: 12,
+      id: 23,
       name: r'totalBytes',
       type: IsarType.long,
     ),
     r'updatedAt': PropertySchema(
-      id: 13,
+      id: 24,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
-    r'url': PropertySchema(id: 14, name: r'url', type: IsarType.string),
+    r'url': PropertySchema(id: 25, name: r'url', type: IsarType.string),
   },
 
   estimateSize: _downloadTaskEstimateSize,
@@ -125,6 +164,9 @@ int _downloadTaskEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  bytesCount += 3 + object.episodeId.length * 3;
+  bytesCount += 3 + object.episodeTitle.length * 3;
+  bytesCount += 3 + object.error.length * 3;
   bytesCount += 3 + object.fileName.length * 3;
   bytesCount += 3 + object.headers.length * 3;
   {
@@ -139,7 +181,18 @@ int _downloadTaskEstimateSize(
     }
   }
   bytesCount += 3 + object.mediaId.length * 3;
+  bytesCount += 3 + object.mediaTitle.length * 3;
+  bytesCount += 3 + object.pagePaths.length * 3;
+  {
+    for (var i = 0; i < object.pagePaths.length; i++) {
+      final value = object.pagePaths[i];
+      bytesCount += value.length * 3;
+    }
+  }
   bytesCount += 3 + object.savePath.length * 3;
+  bytesCount += 3 + object.scanlator.length * 3;
+  bytesCount += 3 + object.sourceId.length * 3;
+  bytesCount += 3 + object.sourceName.length * 3;
   bytesCount += 3 + object.subtitles.length * 3;
   {
     final offsets = allOffsets[DownloadSubtitle]!;
@@ -162,31 +215,42 @@ void _downloadTaskSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDateTime(offsets[0], object.createdAt);
-  writer.writeLong(offsets[1], object.downloadedBytes);
-  writer.writeDouble(offsets[2], object.episodeNumber);
-  writer.writeString(offsets[3], object.fileName);
+  writer.writeLong(offsets[0], object.attempts);
+  writer.writeDateTime(offsets[1], object.createdAt);
+  writer.writeLong(offsets[2], object.downloadedBytes);
+  writer.writeString(offsets[3], object.episodeId);
+  writer.writeDouble(offsets[4], object.episodeNumber);
+  writer.writeString(offsets[5], object.episodeTitle);
+  writer.writeString(offsets[6], object.error);
+  writer.writeBool(offsets[7], object.external);
+  writer.writeString(offsets[8], object.fileName);
   writer.writeObjectList<DownloadHeader>(
-    offsets[4],
+    offsets[9],
     allOffsets,
     DownloadHeaderSchema.serialize,
     object.headers,
   );
-  writer.writeBool(offsets[5], object.isM3u8);
-  writer.writeString(offsets[6], object.mediaId);
-  writer.writeDouble(offsets[7], object.progress);
-  writer.writeBool(offsets[8], object.requiresProxy);
-  writer.writeString(offsets[9], object.savePath);
-  writer.writeByte(offsets[10], object.status.index);
+  writer.writeBool(offsets[10], object.isM3u8);
+  writer.writeBool(offsets[11], object.isManga);
+  writer.writeString(offsets[12], object.mediaId);
+  writer.writeString(offsets[13], object.mediaTitle);
+  writer.writeStringList(offsets[14], object.pagePaths);
+  writer.writeDouble(offsets[15], object.progress);
+  writer.writeBool(offsets[16], object.requiresProxy);
+  writer.writeString(offsets[17], object.savePath);
+  writer.writeString(offsets[18], object.scanlator);
+  writer.writeString(offsets[19], object.sourceId);
+  writer.writeString(offsets[20], object.sourceName);
+  writer.writeByte(offsets[21], object.status.index);
   writer.writeObjectList<DownloadSubtitle>(
-    offsets[11],
+    offsets[22],
     allOffsets,
     DownloadSubtitleSchema.serialize,
     object.subtitles,
   );
-  writer.writeLong(offsets[12], object.totalBytes);
-  writer.writeDateTime(offsets[13], object.updatedAt);
-  writer.writeString(offsets[14], object.url);
+  writer.writeLong(offsets[23], object.totalBytes);
+  writer.writeDateTime(offsets[24], object.updatedAt);
+  writer.writeString(offsets[25], object.url);
 }
 
 DownloadTask _downloadTaskDeserialize(
@@ -196,38 +260,49 @@ DownloadTask _downloadTaskDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = DownloadTask();
-  object.createdAt = reader.readDateTime(offsets[0]);
-  object.downloadedBytes = reader.readLong(offsets[1]);
-  object.episodeNumber = reader.readDouble(offsets[2]);
-  object.fileName = reader.readString(offsets[3]);
+  object.attempts = reader.readLong(offsets[0]);
+  object.createdAt = reader.readDateTime(offsets[1]);
+  object.downloadedBytes = reader.readLong(offsets[2]);
+  object.episodeId = reader.readString(offsets[3]);
+  object.episodeNumber = reader.readDouble(offsets[4]);
+  object.episodeTitle = reader.readString(offsets[5]);
+  object.error = reader.readString(offsets[6]);
+  object.external = reader.readBool(offsets[7]);
+  object.fileName = reader.readString(offsets[8]);
   object.headers =
       reader.readObjectList<DownloadHeader>(
-        offsets[4],
+        offsets[9],
         DownloadHeaderSchema.deserialize,
         allOffsets,
         DownloadHeader(),
       ) ??
       [];
   object.id = id;
-  object.isM3u8 = reader.readBool(offsets[5]);
-  object.mediaId = reader.readString(offsets[6]);
-  object.progress = reader.readDouble(offsets[7]);
-  object.requiresProxy = reader.readBool(offsets[8]);
-  object.savePath = reader.readString(offsets[9]);
+  object.isM3u8 = reader.readBool(offsets[10]);
+  object.isManga = reader.readBool(offsets[11]);
+  object.mediaId = reader.readString(offsets[12]);
+  object.mediaTitle = reader.readString(offsets[13]);
+  object.pagePaths = reader.readStringList(offsets[14]) ?? [];
+  object.progress = reader.readDouble(offsets[15]);
+  object.requiresProxy = reader.readBool(offsets[16]);
+  object.savePath = reader.readString(offsets[17]);
+  object.scanlator = reader.readString(offsets[18]);
+  object.sourceId = reader.readString(offsets[19]);
+  object.sourceName = reader.readString(offsets[20]);
   object.status =
-      _DownloadTaskstatusValueEnumMap[reader.readByteOrNull(offsets[10])] ??
+      _DownloadTaskstatusValueEnumMap[reader.readByteOrNull(offsets[21])] ??
       DownloadStatus.pending;
   object.subtitles =
       reader.readObjectList<DownloadSubtitle>(
-        offsets[11],
+        offsets[22],
         DownloadSubtitleSchema.deserialize,
         allOffsets,
         DownloadSubtitle(),
       ) ??
       [];
-  object.totalBytes = reader.readLong(offsets[12]);
-  object.updatedAt = reader.readDateTime(offsets[13]);
-  object.url = reader.readString(offsets[14]);
+  object.totalBytes = reader.readLong(offsets[23]);
+  object.updatedAt = reader.readDateTime(offsets[24]);
+  object.url = reader.readString(offsets[25]);
   return object;
 }
 
@@ -239,14 +314,24 @@ P _downloadTaskDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDateTime(offset)) as P;
-    case 1:
       return (reader.readLong(offset)) as P;
+    case 1:
+      return (reader.readDateTime(offset)) as P;
     case 2:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
+      return (reader.readDouble(offset)) as P;
+    case 5:
+      return (reader.readString(offset)) as P;
+    case 6:
+      return (reader.readString(offset)) as P;
+    case 7:
+      return (reader.readBool(offset)) as P;
+    case 8:
+      return (reader.readString(offset)) as P;
+    case 9:
       return (reader.readObjectList<DownloadHeader>(
                 offset,
                 DownloadHeaderSchema.deserialize,
@@ -255,21 +340,33 @@ P _downloadTaskDeserializeProp<P>(
               ) ??
               [])
           as P;
-    case 5:
-      return (reader.readBool(offset)) as P;
-    case 6:
-      return (reader.readString(offset)) as P;
-    case 7:
-      return (reader.readDouble(offset)) as P;
-    case 8:
-      return (reader.readBool(offset)) as P;
-    case 9:
-      return (reader.readString(offset)) as P;
     case 10:
+      return (reader.readBool(offset)) as P;
+    case 11:
+      return (reader.readBool(offset)) as P;
+    case 12:
+      return (reader.readString(offset)) as P;
+    case 13:
+      return (reader.readString(offset)) as P;
+    case 14:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 15:
+      return (reader.readDouble(offset)) as P;
+    case 16:
+      return (reader.readBool(offset)) as P;
+    case 17:
+      return (reader.readString(offset)) as P;
+    case 18:
+      return (reader.readString(offset)) as P;
+    case 19:
+      return (reader.readString(offset)) as P;
+    case 20:
+      return (reader.readString(offset)) as P;
+    case 21:
       return (_DownloadTaskstatusValueEnumMap[reader.readByteOrNull(offset)] ??
               DownloadStatus.pending)
           as P;
-    case 11:
+    case 22:
       return (reader.readObjectList<DownloadSubtitle>(
                 offset,
                 DownloadSubtitleSchema.deserialize,
@@ -278,11 +375,11 @@ P _downloadTaskDeserializeProp<P>(
               ) ??
               [])
           as P;
-    case 12:
+    case 23:
       return (reader.readLong(offset)) as P;
-    case 13:
+    case 24:
       return (reader.readDateTime(offset)) as P;
-    case 14:
+    case 25:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -518,6 +615,61 @@ extension DownloadTaskQueryWhere
 extension DownloadTaskQueryFilter
     on QueryBuilder<DownloadTask, DownloadTask, QFilterCondition> {
   QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  attemptsEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'attempts', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  attemptsGreaterThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'attempts',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  attemptsLessThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'attempts',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  attemptsBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'attempts',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
   createdAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -628,6 +780,147 @@ extension DownloadTaskQueryFilter
   }
 
   QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeIdEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'episodeId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeIdGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'episodeId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'episodeId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeIdBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'episodeId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeIdStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'episodeId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeIdEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'episodeId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'episodeId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'episodeId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'episodeId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'episodeId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
   episodeNumberEqualTo(double value, {double epsilon = Query.epsilon}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -698,6 +991,303 @@ extension DownloadTaskQueryFilter
 
           epsilon: epsilon,
         ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeTitleEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'episodeTitle',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeTitleGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'episodeTitle',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeTitleLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'episodeTitle',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeTitleBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'episodeTitle',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeTitleStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'episodeTitle',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeTitleEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'episodeTitle',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeTitleContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'episodeTitle',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeTitleMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'episodeTitle',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeTitleIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'episodeTitle', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  episodeTitleIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'episodeTitle', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition> errorEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'error',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  errorGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'error',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition> errorLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'error',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition> errorBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'error',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  errorStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'error',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition> errorEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'error',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition> errorContains(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'error',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition> errorMatches(
+    String pattern, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'error',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  errorIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'error', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  errorIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'error', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  externalEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'external', value: value),
       );
     });
   }
@@ -966,6 +1556,15 @@ extension DownloadTaskQueryFilter
   }
 
   QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  isMangaEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'isManga', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
   mediaIdEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -1102,6 +1701,341 @@ extension DownloadTaskQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(property: r'mediaId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  mediaTitleEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'mediaTitle',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  mediaTitleGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'mediaTitle',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  mediaTitleLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'mediaTitle',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  mediaTitleBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'mediaTitle',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  mediaTitleStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'mediaTitle',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  mediaTitleEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'mediaTitle',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  mediaTitleContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'mediaTitle',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  mediaTitleMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'mediaTitle',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  mediaTitleIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'mediaTitle', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  mediaTitleIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'mediaTitle', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsElementEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'pagePaths',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'pagePaths',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'pagePaths',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'pagePaths',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsElementStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'pagePaths',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsElementEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'pagePaths',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'pagePaths',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'pagePaths',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'pagePaths', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'pagePaths', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'pagePaths', length, true, length, true);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'pagePaths', 0, true, 0, true);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'pagePaths', 0, false, 999999, true);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsLengthLessThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'pagePaths', 0, true, length, include);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsLengthGreaterThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'pagePaths', length, include, 999999, true);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  pagePathsLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'pagePaths',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
       );
     });
   }
@@ -1327,6 +2261,429 @@ extension DownloadTaskQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(property: r'savePath', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  scanlatorEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'scanlator',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  scanlatorGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'scanlator',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  scanlatorLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'scanlator',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  scanlatorBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'scanlator',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  scanlatorStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'scanlator',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  scanlatorEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'scanlator',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  scanlatorContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'scanlator',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  scanlatorMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'scanlator',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  scanlatorIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'scanlator', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  scanlatorIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'scanlator', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceIdEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'sourceId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceIdGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'sourceId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'sourceId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceIdBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'sourceId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceIdStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'sourceId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceIdEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'sourceId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'sourceId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'sourceId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'sourceId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'sourceId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceNameEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'sourceName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceNameGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'sourceName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceNameLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'sourceName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceNameBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'sourceName',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceNameStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'sourceName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceNameEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'sourceName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'sourceName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'sourceName',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'sourceName', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterFilterCondition>
+  sourceNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'sourceName', value: ''),
       );
     });
   }
@@ -1720,6 +3077,18 @@ extension DownloadTaskQueryLinks
 
 extension DownloadTaskQuerySortBy
     on QueryBuilder<DownloadTask, DownloadTask, QSortBy> {
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByAttempts() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'attempts', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByAttemptsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'attempts', Sort.desc);
+    });
+  }
+
   QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -1746,6 +3115,18 @@ extension DownloadTaskQuerySortBy
     });
   }
 
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByEpisodeId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'episodeId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByEpisodeIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'episodeId', Sort.desc);
+    });
+  }
+
   QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByEpisodeNumber() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'episodeNumber', Sort.asc);
@@ -1756,6 +3137,43 @@ extension DownloadTaskQuerySortBy
   sortByEpisodeNumberDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'episodeNumber', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByEpisodeTitle() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'episodeTitle', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy>
+  sortByEpisodeTitleDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'episodeTitle', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByError() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'error', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByErrorDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'error', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByExternal() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'external', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByExternalDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'external', Sort.desc);
     });
   }
 
@@ -1783,6 +3201,18 @@ extension DownloadTaskQuerySortBy
     });
   }
 
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByIsManga() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isManga', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByIsMangaDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isManga', Sort.desc);
+    });
+  }
+
   QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByMediaId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'mediaId', Sort.asc);
@@ -1792,6 +3222,19 @@ extension DownloadTaskQuerySortBy
   QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByMediaIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'mediaId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByMediaTitle() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mediaTitle', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy>
+  sortByMediaTitleDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mediaTitle', Sort.desc);
     });
   }
 
@@ -1829,6 +3272,43 @@ extension DownloadTaskQuerySortBy
   QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortBySavePathDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'savePath', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByScanlator() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'scanlator', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortByScanlatorDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'scanlator', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortBySourceId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sourceId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortBySourceIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sourceId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> sortBySourceName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sourceName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy>
+  sortBySourceNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sourceName', Sort.desc);
     });
   }
 
@@ -1884,6 +3364,18 @@ extension DownloadTaskQuerySortBy
 
 extension DownloadTaskQuerySortThenBy
     on QueryBuilder<DownloadTask, DownloadTask, QSortThenBy> {
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByAttempts() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'attempts', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByAttemptsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'attempts', Sort.desc);
+    });
+  }
+
   QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -1910,6 +3402,18 @@ extension DownloadTaskQuerySortThenBy
     });
   }
 
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByEpisodeId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'episodeId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByEpisodeIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'episodeId', Sort.desc);
+    });
+  }
+
   QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByEpisodeNumber() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'episodeNumber', Sort.asc);
@@ -1920,6 +3424,43 @@ extension DownloadTaskQuerySortThenBy
   thenByEpisodeNumberDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'episodeNumber', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByEpisodeTitle() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'episodeTitle', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy>
+  thenByEpisodeTitleDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'episodeTitle', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByError() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'error', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByErrorDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'error', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByExternal() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'external', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByExternalDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'external', Sort.desc);
     });
   }
 
@@ -1959,6 +3500,18 @@ extension DownloadTaskQuerySortThenBy
     });
   }
 
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByIsManga() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isManga', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByIsMangaDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isManga', Sort.desc);
+    });
+  }
+
   QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByMediaId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'mediaId', Sort.asc);
@@ -1968,6 +3521,19 @@ extension DownloadTaskQuerySortThenBy
   QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByMediaIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'mediaId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByMediaTitle() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mediaTitle', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy>
+  thenByMediaTitleDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mediaTitle', Sort.desc);
     });
   }
 
@@ -2005,6 +3571,43 @@ extension DownloadTaskQuerySortThenBy
   QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenBySavePathDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'savePath', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByScanlator() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'scanlator', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenByScanlatorDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'scanlator', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenBySourceId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sourceId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenBySourceIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sourceId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy> thenBySourceName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sourceName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QAfterSortBy>
+  thenBySourceNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sourceName', Sort.desc);
     });
   }
 
@@ -2060,6 +3663,12 @@ extension DownloadTaskQuerySortThenBy
 
 extension DownloadTaskQueryWhereDistinct
     on QueryBuilder<DownloadTask, DownloadTask, QDistinct> {
+  QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctByAttempts() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'attempts');
+    });
+  }
+
   QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'createdAt');
@@ -2073,10 +3682,40 @@ extension DownloadTaskQueryWhereDistinct
     });
   }
 
+  QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctByEpisodeId({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'episodeId', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<DownloadTask, DownloadTask, QDistinct>
   distinctByEpisodeNumber() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'episodeNumber');
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctByEpisodeTitle({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'episodeTitle', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctByError({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'error', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctByExternal() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'external');
     });
   }
 
@@ -2094,11 +3733,31 @@ extension DownloadTaskQueryWhereDistinct
     });
   }
 
+  QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctByIsManga() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isManga');
+    });
+  }
+
   QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctByMediaId({
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'mediaId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctByMediaTitle({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'mediaTitle', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctByPagePaths() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'pagePaths');
     });
   }
 
@@ -2120,6 +3779,30 @@ extension DownloadTaskQueryWhereDistinct
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'savePath', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctByScanlator({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'scanlator', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctBySourceId({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'sourceId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<DownloadTask, DownloadTask, QDistinct> distinctBySourceName({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'sourceName', caseSensitive: caseSensitive);
     });
   }
 
@@ -2158,6 +3841,12 @@ extension DownloadTaskQueryProperty
     });
   }
 
+  QueryBuilder<DownloadTask, int, QQueryOperations> attemptsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'attempts');
+    });
+  }
+
   QueryBuilder<DownloadTask, DateTime, QQueryOperations> createdAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'createdAt');
@@ -2170,9 +3859,33 @@ extension DownloadTaskQueryProperty
     });
   }
 
+  QueryBuilder<DownloadTask, String, QQueryOperations> episodeIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'episodeId');
+    });
+  }
+
   QueryBuilder<DownloadTask, double, QQueryOperations> episodeNumberProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'episodeNumber');
+    });
+  }
+
+  QueryBuilder<DownloadTask, String, QQueryOperations> episodeTitleProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'episodeTitle');
+    });
+  }
+
+  QueryBuilder<DownloadTask, String, QQueryOperations> errorProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'error');
+    });
+  }
+
+  QueryBuilder<DownloadTask, bool, QQueryOperations> externalProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'external');
     });
   }
 
@@ -2195,9 +3908,28 @@ extension DownloadTaskQueryProperty
     });
   }
 
+  QueryBuilder<DownloadTask, bool, QQueryOperations> isMangaProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isManga');
+    });
+  }
+
   QueryBuilder<DownloadTask, String, QQueryOperations> mediaIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'mediaId');
+    });
+  }
+
+  QueryBuilder<DownloadTask, String, QQueryOperations> mediaTitleProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'mediaTitle');
+    });
+  }
+
+  QueryBuilder<DownloadTask, List<String>, QQueryOperations>
+  pagePathsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'pagePaths');
     });
   }
 
@@ -2216,6 +3948,24 @@ extension DownloadTaskQueryProperty
   QueryBuilder<DownloadTask, String, QQueryOperations> savePathProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'savePath');
+    });
+  }
+
+  QueryBuilder<DownloadTask, String, QQueryOperations> scanlatorProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'scanlator');
+    });
+  }
+
+  QueryBuilder<DownloadTask, String, QQueryOperations> sourceIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'sourceId');
+    });
+  }
+
+  QueryBuilder<DownloadTask, String, QQueryOperations> sourceNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'sourceName');
     });
   }
 

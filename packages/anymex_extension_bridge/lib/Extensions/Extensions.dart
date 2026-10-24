@@ -46,12 +46,12 @@ abstract class Extension {
     try {
       if (supportsAnime) {
         await fetchInstalledAnimeExtensions();
-        unawaited(fetchAnimeExtensions());
+        unawaited(fetchAnimeExtensions().catchError((Object e) { debugPrint('$id repository error: $e'); }));
       }
 
       if (supportsManga) {
         await fetchInstalledMangaExtensions();
-        unawaited(fetchMangaExtensions());
+        unawaited(fetchMangaExtensions().catchError((Object e) { debugPrint('$id repository error: $e'); }));
       }
 
       if (supportsNovel) {

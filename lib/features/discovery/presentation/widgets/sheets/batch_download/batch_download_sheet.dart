@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shonenx/core/network/http_client.dart';
-import 'package:shonenx/core/services/one_dm_service.dart';
 import 'package:shonenx/core/utils/http_x.dart';
 import 'package:shonenx/features/downloads/domain/models/download_task.dart';
 import 'package:shonenx/features/downloads/providers/download_prefs_provider.dart';
@@ -183,7 +182,44 @@ class BatchDownloadSheetState extends ConsumerState<BatchDownloadSheet> {
       availableStreams = null;
       selectedStream = null;
     });
-    fetchServersForReference(firstEp);
+    if (widget.media.type == MediaType.MANGA) {
+      _queueChapters();
+    } else {
+      fetchServersForReference(firstEp);
+    }
+  }
+
+  Future<void> _queueChapters() async {
+    setState(() {
+      currentStep = BatchStep.queueing;
+    });
+    final selected = sortedSelected;
+    try {
+      await ref.read(downloadManagerProvider.future);
+      final manager = ref.read(downloadManagerProvider.notifier);
+      final prefs = await ref.read(downloadPrefsProvider.future);
+      for (final chapter in selected) {
+        if (!mounted || isQueueingCancelled) break;
+        await manager.queueChapter(
+          widget.media,
+          chapter,
+          widget.source,
+          external: widget.forceOneDM || prefs.useOneDM,
+        );
+        if (!mounted) return;
+        setState(() {
+          successCount++;
+          currentIndex++;
+          currentQueueStatus = 'Queued chapter ${chapter.number}';
+        });
+      }
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        currentQueueStatus = 'Could not queue chapters: $e';
+      });
+    }
   }
 
   Future<void> fetchServersForReference(UnifiedEpisode initialEp) async {
@@ -319,10 +355,6 @@ class BatchDownloadSheetState extends ConsumerState<BatchDownloadSheet> {
     final prefServerType = selectedServer?.type;
     final prefQuality = selectedStream?.quality;
 
-    final List<String> oneDmUrls = [];
-    final List<String> oneDmFileNames = [];
-    Map<String, String>? oneDmHeaders;
-
     final use1DM = overrideOneDM ?? (widget.forceOneDM || prefs.useOneDM);
 
     while (currentIndex < total) {
@@ -428,7 +460,6 @@ class BatchDownloadSheetState extends ConsumerState<BatchDownloadSheet> {
           await dir.create(recursive: true);
         }
 
-        final extractedUrl = DownloadUrlHelper.extractUrl(matchedStream.url);
         final mergedHeaders = DownloadUrlHelper.extractHeadersFromUrl(
           matchedStream.url,
           matchedStream.headers,
@@ -442,39 +473,7 @@ class BatchDownloadSheetState extends ConsumerState<BatchDownloadSheet> {
             )
             .toList();
 
-        if (use1DM) {
-          oneDmUrls.add(extractedUrl);
-          oneDmFileNames.add(fileName);
-          oneDmHeaders ??= mergedHeaders;
-
-          final usedSubNames = <String>{};
-          for (final sub in matchedSubs) {
-            final subUrl = DownloadUrlHelper.extractUrl(sub.url);
-            var subFileName = DownloadUrlHelper.formatSubtitleFileName(
-              videoFileName: fileName,
-              language: sub.language,
-              label: sub.label,
-              subtitleUrl: sub.url,
-            );
-
-            if (usedSubNames.contains(subFileName)) {
-              final lastDot = subFileName.lastIndexOf('.');
-              if (lastDot != -1) {
-                final namePart = subFileName.substring(0, lastDot);
-                final extPart = subFileName.substring(lastDot);
-                var counter = 2;
-                while (usedSubNames.contains('$namePart-$counter$extPart')) {
-                  counter++;
-                }
-                subFileName = '$namePart-$counter$extPart';
-              }
-            }
-
-            usedSubNames.add(subFileName);
-            oneDmUrls.add(subUrl);
-            oneDmFileNames.add(subFileName);
-          }
-        } else {
+        {
           final downloadUrl = DownloadUrlHelper.extractDownloadUrl(
             matchedStream.url,
           );
@@ -488,7 +487,13 @@ class BatchDownloadSheetState extends ConsumerState<BatchDownloadSheet> {
 
           final task = DownloadTask()
             ..url = downloadUrl
+            ..external = use1DM
             ..mediaId = widget.media.id
+            ..sourceId = widget.source.id
+            ..sourceName = widget.source.name
+            ..episodeId = ep.id
+            ..episodeTitle = ep.title ?? ''
+            ..mediaTitle = widget.media.title.getPreferedTitle
             ..headersMap = mergedHeaders
             ..episodeNumber = ep.number
             ..savePath = '$targetDir/$fileName'
@@ -507,6 +512,7 @@ class BatchDownloadSheetState extends ConsumerState<BatchDownloadSheet> {
                 )
                 .toList();
 
+          await ref.read(downloadManagerProvider.future);
           await ref.read(downloadManagerProvider.notifier).startDownload(task);
           queuedTaskIds.add(task.id);
         }
@@ -520,14 +526,6 @@ class BatchDownloadSheetState extends ConsumerState<BatchDownloadSheet> {
     }
 
     if (isQueueingCancelled) return;
-
-    if (use1DM && oneDmUrls.isNotEmpty) {
-      await OneDMService.instance.downloadBatch(
-        urls: oneDmUrls,
-        fileNames: oneDmFileNames,
-        headers: oneDmHeaders,
-      );
-    }
 
     if (mounted && currentIndex >= total) {
       if (failedEpisodes.isNotEmpty) {

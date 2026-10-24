@@ -173,19 +173,6 @@ class AnimeSourceAdapter extends BaseSourceAdapter implements AnimeSource {
         }
       }
 
-      // If season is still null, check if rawNum encodes season.episode (e.g. 3.2, 1.9, 0.46)
-      if (season == null && rawNum.contains('.')) {
-        final parts = rawNum.split('.');
-        if (parts.length == 2) {
-          final s = int.tryParse(parts[0]);
-          final ep = double.tryParse(parts[1]);
-          if (s != null && ep != null && s >= 0 && ep > 0) {
-            season = s;
-            episodeNumber = ep;
-          }
-        }
-      }
-
       episodeNumber ??= double.tryParse(rawNum) ?? 0.0;
     }
 
@@ -244,31 +231,25 @@ class AnimeSourceAdapter extends BaseSourceAdapter implements AnimeSource {
 
       methodLog.d('streams=${videos.length}');
 
-      if (videos.isNotEmpty) {
-        methodLog.w(videos.first.extraData.toString());
-      }
 
       return videos.map((e) {
         String finalUrl = e.url;
 
-        final finalHeaders = {
-          ...(e.headers ?? {}),
-          'User-Agent':
-              'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36',
-        };
+        final finalHeaders = e.headers ?? const <String, String>{};
 
         return VideoStream(
           url: finalUrl,
           quality: e.title ?? e.quality,
           headers: finalHeaders,
           subtitles: (e.subtitles ?? [])
-              .map((s) => SubtitleTrack(url: s.file!, language: s.label!))
+              .where((s) => s.file?.isNotEmpty == true)
+              .map((s) => SubtitleTrack(url: s.file!, language: s.label ?? 'Unknown'))
               .toList(),
         );
       }).toList();
     } catch (e, st) {
       methodLog.e('getSources failed', e, st);
-      return [];
+      throw StateError('${sourceInfo.name}: stream lookup failed: $e');
     }
   }
 

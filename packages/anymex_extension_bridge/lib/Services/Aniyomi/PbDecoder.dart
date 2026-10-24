@@ -2,7 +2,8 @@ import 'dart:convert';
 
 /// Aniyomi v17 index.proto. Truncated input is an error, never an empty store.
 class PbDecoder {
-  static Map<String, dynamic> decodeStore(List<int> bytes) {
+  static Map<String, dynamic> decodeStore(List<int> bytes,
+      {bool manga = false}) {
     final root = _message(bytes);
     if (root.containsKey(101) || root.containsKey(102)) {
       return {
@@ -11,22 +12,27 @@ class PbDecoder {
         if (root.containsKey(102)) 'extensionListUrl': _string(root, 102),
         if (root.containsKey(101))
           'extensionList': {
-            'extensions': _extensions(_message(root[101]!.single as List<int>))
+            'extensions': _extensions(_message(root[101]!.single as List<int>),
+                manga: manga)
           },
       };
     }
-    return {'extensions': _extensions(root)};
+    return {'extensions': _extensions(root, manga: manga)};
   }
 
-  static List<Map<String, dynamic>> decodeIndex(List<int> bytes) {
-    final store = decodeStore(bytes);
+  static List<Map<String, dynamic>> decodeIndex(List<int> bytes,
+      {bool manga = false}) {
+    final store = decodeStore(bytes, manga: manga);
     return List<Map<String, dynamic>>.from(
         store['extensionList']?['extensions'] ?? store['extensions'] ?? []);
   }
 
-  static List<Map<String, dynamic>> _extensions(Map<int, List<Object>> list) =>
+  static List<Map<String, dynamic>> _extensions(Map<int, List<Object>> list,
+          {bool manga = false}) =>
       (list[1] ?? []).map((raw) {
         final e = _message(raw as List<int>);
+        final isManga =
+            _string(e, 2).startsWith('eu.kanade.tachiyomi.extension.');
         final resources = _message(e[3]?.single as List<int>? ?? []);
         return <String, dynamic>{
           'name': _string(e, 1),
@@ -39,15 +45,15 @@ class PbDecoder {
           'versionCode': _integer(e, 5),
           'versionName': _string(e, 6),
           'contentWarning': _integer(e, 7),
-          'isTorrent': _integer(e, 8) != 0,
-          'sources': (e[9] ?? []).map((raw) {
+          'isTorrent': !isManga && _integer(e, 8) != 0,
+          'sources': (e[isManga ? 8 : 9] ?? []).map((raw) {
             final s = _message(raw as List<int>);
             return {
               'id': _integer(s, 1).toString(),
               'name': _string(s, 2),
               'language': _string(s, 3),
               'homeUrl': _string(s, 4),
-              'message': _string(s, 6)
+              'message': _string(s, isManga ? 7 : 6)
             };
           }).toList(),
         };
@@ -59,11 +65,13 @@ class PbDecoder {
     int varint() {
       var value = 0;
       for (var shift = 0; shift < 70; shift += 7) {
-        if (offset >= bytes.length)
+        if (offset >= bytes.length) {
           throw const FormatException('Truncated protobuf varint');
+        }
         final byte = bytes[offset++];
-        if (shift == 63 && byte > 1)
+        if (shift == 63 && byte > 1) {
           throw const FormatException('Protobuf varint overflow');
+        }
         value |= (byte & 127) << shift;
         if (byte < 128) return value;
       }
@@ -78,8 +86,9 @@ class PbDecoder {
         value = varint();
       } else if (wire == 1 || wire == 2 || wire == 5) {
         final size = wire == 2 ? varint() : (wire == 1 ? 8 : 4);
-        if (size < 0 || size > bytes.length - offset)
+        if (size < 0 || size > bytes.length - offset) {
           throw const FormatException('Truncated protobuf field');
+        }
         value = bytes.sublist(offset, offset + size);
         offset += size;
       } else {

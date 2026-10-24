@@ -391,7 +391,11 @@ class _DownloadSheetState extends ConsumerState<DownloadSheet> {
     );
   }
 
-  Future<void> _startDownload(VideoStream stream, VideoServer server) async {
+  Future<void> _startDownload(
+    VideoStream stream,
+    VideoServer? server, {
+    bool external = false,
+  }) async {
     final downloadUrl = DownloadUrlHelper.extractDownloadUrl(stream.url);
     if (downloadUrl == null || DownloadUrlHelper.isTorrent(stream.url)) {
       if (mounted) {
@@ -455,7 +459,13 @@ class _DownloadSheetState extends ConsumerState<DownloadSheet> {
 
     final task = DownloadTask()
       ..url = downloadUrl
+      ..external = external
       ..mediaId = widget.media.id
+      ..sourceId = widget.source.id
+      ..sourceName = widget.source.name
+      ..episodeId = widget.episode.id
+      ..episodeTitle = widget.episode.title ?? ''
+      ..mediaTitle = widget.media.title.getPreferedTitle
       ..headersMap = mergedHeaders
       ..episodeNumber = widget.episode.number
       ..savePath = '$targetDir/$fileName'
@@ -472,6 +482,7 @@ class _DownloadSheetState extends ConsumerState<DownloadSheet> {
           )
           .toList();
 
+    await ref.read(downloadManagerProvider.future);
     await ref.read(downloadManagerProvider.notifier).startDownload(task);
 
     if (mounted) {
@@ -482,87 +493,8 @@ class _DownloadSheetState extends ConsumerState<DownloadSheet> {
     }
   }
 
-  Future<void> _start1DMDownload(
-    VideoStream stream, [
-    VideoServer? server,
-  ]) async {
-    final downloadUrl = DownloadUrlHelper.extractUrl(stream.url);
-    if (downloadUrl.isEmpty) return;
-
-    final selectedSubs = await _promptSubtitles(stream: stream, server: server);
-    if (selectedSubs == null) {
-      // User cancelled
-      return;
-    }
-
-    final prefs = await ref.read(downloadPrefsProvider.future);
-    final epNum = widget.episode.number.toString().contains('.0')
-        ? widget.episode.number.toInt().toString()
-        : widget.episode.number.toString();
-
-    var fileName = prefs.fileNameFormat == FileNameFormat.titleAndEpisode
-        ? '${widget.media.title.getPreferedTitle} - Episode $epNum.mp4'
-        : 'Episode $epNum.mp4';
-    fileName = fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-
-    final mergedHeaders = DownloadUrlHelper.extractHeadersFromUrl(
-      stream.url,
-      stream.headers,
-    );
-
-    final subtitleUrls = <String>[];
-    final subtitleFileNames = <String>[];
-    final usedSubNames = <String>{};
-
-    for (final sub in selectedSubs) {
-      if (sub.url.isEmpty || sub == SubtitleTrack.none) continue;
-      final subUrl = DownloadUrlHelper.extractUrl(sub.url);
-      var subFileName = DownloadUrlHelper.formatSubtitleFileName(
-        videoFileName: fileName,
-        language: sub.language,
-        label: sub.label,
-        subtitleUrl: sub.url,
-      );
-
-      if (usedSubNames.contains(subFileName)) {
-        final lastDot = subFileName.lastIndexOf('.');
-        if (lastDot != -1) {
-          final namePart = subFileName.substring(0, lastDot);
-          final extPart = subFileName.substring(lastDot);
-          var counter = 2;
-          while (usedSubNames.contains('$namePart-$counter$extPart')) {
-            counter++;
-          }
-          subFileName = '$namePart-$counter$extPart';
-        }
-      }
-
-      usedSubNames.add(subFileName);
-      subtitleUrls.add(subUrl);
-      subtitleFileNames.add(subFileName);
-    }
-
-    final success = await OneDMService.instance.download(
-      url: downloadUrl,
-      fileName: fileName,
-      headers: mergedHeaders,
-      subtitleUrls: subtitleUrls,
-      subtitleFileNames: subtitleFileNames,
-    );
-
-    if (mounted) {
-      if (success) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Sent stream to 1DM')));
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to launch 1DM')));
-      }
-    }
-  }
+  Future<void> _start1DMDownload(VideoStream stream, [VideoServer? server]) =>
+      _startDownload(stream, server, external: true);
 
   void _copyStreamUrl(VideoStream stream) {
     final copyUrl = DownloadUrlHelper.extractUrl(stream.url);

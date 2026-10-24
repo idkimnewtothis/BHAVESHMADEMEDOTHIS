@@ -55,6 +55,17 @@ class DownloadTask {
   @Index(unique: true, replace: true)
   String url = '';
 
+  String sourceId = '';
+  String sourceName = '';
+  String episodeId = '';
+  String episodeTitle = '';
+  String scanlator = '';
+  String mediaTitle = '';
+  bool isManga = false;
+  bool external = false;
+  int attempts = 0;
+  String error = '';
+  List<String> pagePaths = [];
   String mediaId = '';
   double episodeNumber = 0.0;
   String savePath = '';

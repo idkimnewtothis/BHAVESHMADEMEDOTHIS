@@ -129,11 +129,11 @@ class DownloadPrefsNotifier extends AsyncNotifier<DownloadPrefs> {
     if (Platform.isAndroid) {
       final extDir = await getExternalStorageDirectory();
       defaultPath = extDir != null
-          ? '${extDir.path}/Bhavesh'
+          ? '${extDir.path}/ShonenX+'
           : '${(await getApplicationSupportDirectory()).path}/Downloads';
     } else {
       final docDir = await getApplicationDocumentsDirectory();
-      defaultPath = '${docDir.path}/Bhavesh/Downloads';
+      defaultPath = '${docDir.path}/ShonenX+/Downloads';
     }
 
     if (jsonStr != null) {
@@ -205,10 +205,10 @@ class DownloadPrefsNotifier extends AsyncNotifier<DownloadPrefs> {
       final directory =
           await getExternalStorageDirectory() ??
           await getApplicationSupportDirectory();
-      return '${directory.path}/Bhavesh';
+      return '${directory.path}/ShonenX+';
     } else {
       final docDir = await getApplicationDocumentsDirectory();
-      return '${docDir.path}/Bhavesh/Downloads';
+      return '${docDir.path}/ShonenX+/Downloads';
     }
   }
 
