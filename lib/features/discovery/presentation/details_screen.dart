@@ -149,6 +149,25 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen>
                     radius: uiRoundness,
                     icon: const Icon(Icons.share, size: 18),
                     onPressed: () {
+                      final sourceId = displayMedia.sourceId;
+                      if (sourceId != null &&
+                          !{
+                            'anilist',
+                            'mal',
+                            'myanimelist',
+                            'kitsu',
+                            'simkl',
+                          }.contains(sourceId)) {
+                        final url = Uri.tryParse(displayMedia.url ?? '');
+                        SharePlus.instance.share(
+                          url != null && {'http', 'https'}.contains(url.scheme)
+                              ? ShareParams(uri: url)
+                              : ShareParams(
+                                  text: displayMedia.title.getPreferedTitle,
+                                ),
+                        );
+                        return;
+                      }
                       final providerId = displayMedia.providerId ?? 'anilist';
                       final id = displayMedia.id;
                       final type = widget.mediaType == MediaType.ANIME

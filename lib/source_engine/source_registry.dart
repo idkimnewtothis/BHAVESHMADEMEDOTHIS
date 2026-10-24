@@ -136,7 +136,7 @@ final availableAnimeSourcesProvider = FutureProvider<List<SourceInfo>>(
   retry: (retryCount, error) => null,
   (ref) async {
     final inbuilt = ref
-        .read(inbuiltAnimeSourcesProvider)
+        .watch(inbuiltAnimeSourcesProvider)
         .map(
           (s) => SourceInfo(
             id: s.sourceInfo.id,

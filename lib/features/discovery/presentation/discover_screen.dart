@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 
 import 'package:shonenx/shared/widgets/smart_image.dart';
@@ -548,6 +549,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
           bottom: false,
           child: Column(
             children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => context.push('/moviebox'),
+                  icon: const Icon(Icons.movie_outlined),
+                  label: const Text('MovieBox UI'),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 2),
                 child: UnifiedSearchBar(
@@ -1009,7 +1018,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _selectedType == MediaType.MANGA ? 'No manga sources installed. Add a Mihon repository in Extensions.' : 'No anime sources installed',
+                    _selectedType == MediaType.MANGA
+                        ? 'No manga sources installed. Add a Mihon repository in Extensions.'
+                        : 'No anime sources installed',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),

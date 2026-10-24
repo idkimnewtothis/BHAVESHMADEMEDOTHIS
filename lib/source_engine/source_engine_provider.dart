@@ -53,7 +53,7 @@ final animeSourceProvider = Provider.family<AnimeSource, SourceInfo>((
 ) {
   if (info.type == SourceType.inbuilt) {
     return ref
-        .read(inbuiltAnimeSourcesProvider)
+        .watch(inbuiltAnimeSourcesProvider)
         .firstWhere((s) => s.sourceInfo.id == info.id);
   }
 
