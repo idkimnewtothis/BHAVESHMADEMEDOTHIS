@@ -12,14 +12,17 @@ import kotlinx.coroutines.withTimeout
 
 /** Public source-api from Mihon v0.21.2, supporting libraries 1.4 and 1.6. */
 internal class MangaRuntime(private val context: Context) {
-    private val sources = java.util.concurrent.ConcurrentHashMap<String, Source>()
-    val failures = mutableListOf<Map<String, String>>()
+    @Volatile private var sources: Map<String, Source> = emptyMap()
+    @Volatile var failures: List<Map<String, String>> = emptyList()
+        private set
     @Synchronized fun load(packages: List<PackageInfo>, verify: (PackageInfo) -> Unit): List<Map<String, Any?>> {
         val next = mutableMapOf<String, Source>()
         val result = mutableListOf<Map<String, Any?>>()
-        failures.clear()
+        val nextFailures = mutableListOf<Map<String, String>>()
         for (info in packages.filter { it.packageName.startsWith("eu.kanade.tachiyomi.extension.") }) {
             try {
+                val packageSources = mutableMapOf<String, Source>()
+                val packageRows = mutableListOf<Map<String, Any?>>()
                 verify(info)
                 val app = info.applicationInfo ?: error("Application metadata missing")
                 val loader = PathClassLoader(app.sourceDir, context.classLoader)
@@ -33,25 +36,35 @@ internal class MangaRuntime(private val context: Context) {
                         else -> error("Unsupported source class $full")
                     }
                     for (s in loaded) {
-                        check(next.put(s.id.toString(), s) == null) { "Duplicate source id ${s.id}" }
-                        result += mapOf("id" to s.id.toString(), "name" to s.name, "pkgName" to info.packageName,
+                        check(s.id.toString() !in next && packageSources.put(s.id.toString(), s) == null) { "Duplicate source id ${s.id}" }
+                        packageRows += mapOf("id" to s.id.toString(), "name" to s.name, "pkgName" to info.packageName,
                             "version" to info.versionName, "lang" to s.lang, "baseUrl" to (s as? HttpSource)?.baseUrl,
                             "itemType" to 0, "isShared" to true, "supportsLatest" to s.supportsLatest, "supportsPopular" to true,
                             "isNsfw" to (app.metaData.getInt("tachiyomi.extension.nsfw", 0) == 1))
                     }
                 }
+                next.putAll(packageSources)
+                result.addAll(packageRows)
             } catch (e: Throwable) {
                 if (e is VirtualMachineError || e is ThreadDeath) throw e
-                failures += mapOf("package" to info.packageName, "reason" to (e.message ?: e.javaClass.simpleName))
+                nextFailures += mapOf("package" to info.packageName, "reason" to (e.message ?: e.javaClass.simpleName))
             }
         }
-        sources.clear(); sources.putAll(next)
+        sources = next.toMap()
+        failures = nextFailures.toList()
         return result
     }
     suspend fun execute(call: MethodCall): Any? = withTimeout(30_000) {
         val a = call.arguments as Map<*, *>
         val source = sources[a["sourceId"]] ?: error("Manga source ${a["sourceId"]} is not installed or trusted. Refresh Sources.")
         when(call.method) {
+            "getPreference", "saveSourcePreference" -> {
+                val configurable = source as? eu.kanade.tachiyomi.source.ConfigurableSource
+                if (configurable == null) {
+                    check(call.method == "getPreference") { "Source has no preferences" }
+                    emptyList<Any>()
+                } else SourcePreferences.execute(context, source.id, call.method, a, configurable::setupPreferenceScreen)
+            }
             "getPopular" -> page(source.getPopularManga((a["page"] as Number).toInt()))
             "getLatestUpdates" -> page(source.getLatestUpdates((a["page"] as Number).toInt()))
             "search" -> page(source.getSearchManga((a["page"] as Number).toInt(), a["query"] as String, source.getFilterList()))

@@ -1,3 +1,7 @@
+import 'package:get/get.dart';
+import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart'
+    as bridge;
+import 'package:shonenx/source_engine/utils/source_invalidation.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,6 +49,28 @@ class _ExtensionsSettingsScreenState
   String _selectedEngineFilter = 'All';
   bool _isInstalledMode = true;
   Timer? _debounceTimer;
+  AppLifecycleListener? _lifecycle;
+  bool _refreshing = false;
+  Future<void> _refreshInstalled() async {
+    if (_refreshing || !mounted) return;
+    _refreshing = true;
+    try {
+      await Get.find<bridge.ExtensionManager>().refreshInstalledExtensions();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Extension refresh: $e')));
+      }
+    } finally {
+      _refreshing = false;
+      if (mounted) {
+        ref.invalidateAllSources();
+        ref.invalidate(activeExtReposProvider);
+        setState(() {});
+      }
+    }
+  }
 
   void _onSearchTextChanged() {
     _debounceTimer?.cancel();
@@ -62,6 +88,7 @@ class _ExtensionsSettingsScreenState
   @override
   void initState() {
     super.initState();
+    _lifecycle = AppLifecycleListener(onResume: _refreshInstalled);
     _searchController.addListener(_onSearchTextChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.autoAddUrl != null && widget.autoAddUrl!.isNotEmpty) {
@@ -82,6 +109,7 @@ class _ExtensionsSettingsScreenState
 
   @override
   void dispose() {
+    _lifecycle?.dispose();
     _debounceTimer?.cancel();
     _searchController.removeListener(_onSearchTextChanged);
     _searchController.dispose();

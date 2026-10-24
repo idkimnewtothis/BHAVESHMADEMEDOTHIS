@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'bundled_runtime_setup_sheet.dart';
 import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart'
     as bridge;
 import 'package:file_picker/file_picker.dart';
@@ -39,7 +40,7 @@ class _RuntimeSetupSheetState extends ConsumerState<RuntimeSetupSheet> {
   @override
   void initState() {
     super.initState();
-    _checkInitialState();
+    if (!Platform.isAndroid) _checkInitialState();
   }
 
   Future<void> _checkInitialState() async {
@@ -222,6 +223,9 @@ class _RuntimeSetupSheetState extends ConsumerState<RuntimeSetupSheet> {
 
   @override
   Widget build(BuildContext context) {
+    if (Platform.isAndroid) {
+      return BundledRuntimeSetupSheet(onComplete: widget.onComplete);
+    }
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final controller = bridge.AnymeXRuntimeBridge.controller;

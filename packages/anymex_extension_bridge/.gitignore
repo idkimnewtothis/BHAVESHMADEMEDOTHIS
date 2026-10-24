@@ -28,3 +28,7 @@ doc/api/
 
 test/
 /output
+
+# Native bridge regression tests belong to this application.
+!android/src/test/
+!android/src/test/**

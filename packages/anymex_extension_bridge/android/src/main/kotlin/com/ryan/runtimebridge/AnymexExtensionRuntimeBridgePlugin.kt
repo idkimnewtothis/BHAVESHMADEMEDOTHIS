@@ -1,5 +1,10 @@
 package com.ryan.runtimebridge
 
+import android.app.Activity
+import android.provider.Settings
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.PluginRegistry
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
@@ -23,14 +28,82 @@ import java.io.File
 import java.security.MessageDigest
 
 /** Only installed, certificate-verified anime or manga APKs enter this runtime. */
-class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin {
+class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin, ActivityAware, PluginRegistry.ActivityResultListener {
+    private var activityBinding: ActivityPluginBinding? = null
+    private data class PendingInstall(val file: File, val pkg: String, val fingerprint: String, val versionCode: Long, val result: CompletableDeferred<Boolean>)
+    private var pendingInstall: PendingInstall? = null
+    private data class PendingRemoval(val pkg: String, val result: CompletableDeferred<Boolean>)
+    private var pendingRemoval: PendingRemoval? = null
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activityBinding = binding
+        binding.addActivityResultListener(this)
+    }
+    override fun onDetachedFromActivityForConfigChanges() {
+        activityBinding?.removeActivityResultListener(this)
+        activityBinding = null
+    }
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) = onAttachedToActivity(binding)
+    override fun onDetachedFromActivity() {
+        onDetachedFromActivityForConfigChanges()
+        pendingInstall?.result?.completeExceptionally(IllegalStateException("Installation interrupted. Retry from the store."))
+        pendingInstall = null
+        pendingRemoval?.result?.completeExceptionally(IllegalStateException("Removal interrupted. Retry from the store."))
+        pendingRemoval = null
+    }
+    private fun launchInstaller(install: PendingInstall) {
+        val activity = activityBinding?.activity ?: error("Open the app to install an extension")
+        if (Build.VERSION.SDK_INT >= 26 && !context.packageManager.canRequestPackageInstalls()) {
+            activity.startActivityForResult(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}")), 6201)
+            return
+        }
+        val uri = FileProvider.getUriForFile(context, context.packageName + ".anime-apks", install.file)
+        activity.startActivityForResult(Intent(Intent.ACTION_INSTALL_PACKAGE).setData(uri)
+            .putExtra(Intent.EXTRA_RETURN_RESULT, true)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), 6202)
+    }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        if (requestCode == 6203) {
+            val removal = pendingRemoval ?: return true
+            try {
+                check(resultCode == Activity.RESULT_OK) { "Android removal was canceled or failed" }
+                val exists = try { context.packageManager.getPackageInfo(removal.pkg, 0); true } catch (_: PackageManager.NameNotFoundException) { false }
+                check(!exists) { "Android did not remove the extension" }
+                check(trust.edit().remove(removal.pkg).commit()) { "Could not clear extension trust" }
+                removal.result.complete(true)
+            } catch (e: Exception) { removal.result.completeExceptionally(e) }
+            pendingRemoval = null
+            return true
+        }
+        if (requestCode != 6201 && requestCode != 6202) return false
+        val install = pendingInstall ?: return true
+        try {
+            if (requestCode == 6201) {
+                check(context.packageManager.canRequestPackageInstalls()) { "Allow installs from ShonenX+ in Android settings, then retry." }
+                launchInstaller(install)
+            } else {
+                check(resultCode == Activity.RESULT_OK) { "Android installation was canceled or failed. Retry to install the extension." }
+                val installed = context.packageManager.getPackageInfo(install.pkg, flags)
+                check(certificates(installed) == setOf(install.fingerprint)) { "Installed certificate does not match the trusted repository" }
+                val code = if (Build.VERSION.SDK_INT >= 28) installed.longVersionCode else installed.versionCode.toLong()
+                check(code >= install.versionCode) { "Android did not install the requested extension version" }
+                check(trust.edit().putString(install.pkg, install.fingerprint).commit()) { "Could not save extension trust" }
+                install.result.complete(true)
+                pendingInstall = null
+            }
+        } catch (e: Exception) {
+            install.result.completeExceptionally(e)
+            pendingInstall = null
+        }
+        return true
+    }
+
     private lateinit var manga: MangaRuntime
     private lateinit var context: Context
     private lateinit var channel: MethodChannel
     private lateinit var hostChannel: MethodChannel
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val sources = java.util.concurrent.ConcurrentHashMap<String, Loaded>()
-    private val failures = mutableListOf<Map<String, String>>()
+    @Volatile private var sources: Map<String, Loaded> = emptyMap()
+    @Volatile private var failures: List<Map<String, String>> = emptyList()
     private data class Loaded(val source: AnimeSource, val pkg: String, val lib: Int, val version: String, val nsfw: Boolean)
     private val flags = PackageManager.GET_META_DATA or PackageManager.GET_CONFIGURATIONS or (if (Build.VERSION.SDK_INT >= 28) PackageManager.GET_SIGNING_CERTIFICATES else PackageManager.GET_SIGNATURES)
     private val supported = setOf(14, 16, 17)
@@ -47,7 +120,8 @@ class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin {
         hostChannel.setMethodCallHandler { call, result ->
             when(call.method) {
                 "isLoaded" -> result.success(true)
-                "loadAnymeXRuntimeHost" -> result.error("UNSUPPORTED", "The anime runtime is bundled; external hosts are disabled", null)
+                "runtimeInfo" -> result.success(mapOf("bundled" to true, "version" to "2.1.0", "mihon" to "v0.21.2", "animeLibs" to listOf(14,16,17), "mangaLibs" to listOf("1.4","1.6")))
+                "loadAnymeXRuntimeHost" -> result.error("UNSUPPORTED", "Mihon and Aniyomi support is included in ShonenX+. Install an app update to update the runtime.", null)
                 "cancelRequest" -> result.success(null)
                 else -> result.notImplemented()
             }
@@ -96,10 +170,12 @@ class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin {
     }
     private val trust get() = context.getSharedPreferences("anime-extension-trust", Context.MODE_PRIVATE)
     @Synchronized private fun load(): List<Map<String, Any?>> {
-        sources.clear(); failures.clear()
+        val next = mutableMapOf<String, Loaded>()
+        val nextFailures = mutableListOf<Map<String, String>>()
         val packages = context.packageManager.getInstalledPackages(flags)
         for (info in packages.filter { it.packageName.startsWith("eu.kanade.tachiyomi.animeextension.") }) {
             try {
+                val packageSources = mutableMapOf<String, Loaded>()
                 val lib = validate(info)
                 val expected = trust.getString(info.packageName, null) ?: error("Not trusted. Install or trust this extension from its repository first.")
                 require(certificates(info) == setOf(expected)) { "Signing certificate mismatch" }
@@ -111,13 +187,20 @@ class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin {
                     val fullName = name.trim().let { if(it.startsWith('.')) info.packageName + it else it }
                     val obj = loader.loadClass(fullName).getDeclaredConstructor().newInstance()
                     val list = when(obj) { is AnimeSource -> listOf(obj); is AnimeSourceFactory -> obj.createSources(); else -> error("Unsupported source class $fullName") }
-                    for (source in list) sources[source.id.toString()] = Loaded(source, info.packageName, lib, info.versionName ?: "", app.metaData.getInt("tachiyomi.animeextension.nsfw", 0) == 1)
+                    for (source in list) {
+                        val id = source.id.toString()
+                        check(id !in next && id !in packageSources) { "Duplicate source id $id" }
+                        packageSources[id] = Loaded(source, info.packageName, lib, info.versionName ?: "", app.metaData.getInt("tachiyomi.animeextension.nsfw", 0) == 1)
+                    }
                 }
+                next.putAll(packageSources)
             } catch (e: Throwable) {
                 if (e is VirtualMachineError || e is ThreadDeath) throw e
-                failures += mapOf("package" to info.packageName, "reason" to (e.message ?: e.javaClass.simpleName))
+                nextFailures += mapOf("package" to info.packageName, "reason" to (e.message ?: e.javaClass.simpleName))
             }
         }
+        sources = next.toMap()
+        failures = nextFailures.toList()
         return sources.values.map { loaded ->
             val s = loaded.source
             mapOf("id" to s.id.toString(), "name" to s.name, "pkgName" to loaded.pkg, "version" to loaded.version,
@@ -145,19 +228,30 @@ class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin {
                 if(call.method == "inspectApk") return mapOf("package" to info.packageName, "fingerprint" to certs.single(), "lib" to lib, "version" to info.versionName)
                 require(args["package"] == info.packageName) { "APK package differs from repository entry" }
                 require(certs == setOf((args["fingerprint"] as String).lowercase())) { "Signing certificate does not match repository" }
-                trust.edit().putString(info.packageName, certs.single()).commit()
-                val uri = FileProvider.getUriForFile(context, context.packageName + ".anime-apks", file)
-                withContext(Dispatchers.Main) {
-                    context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/vnd.android.package-archive")
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION))
+                val pending = withContext(Dispatchers.Main) {
+                    check(pendingInstall == null && pendingRemoval == null) { "Finish the current Android package operation first" }
+                    val code = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode else info.versionCode.toLong()
+                    PendingInstall(file, info.packageName, certs.single(), code, CompletableDeferred()).also {
+                        pendingInstall = it
+                        try { launchInstaller(it) } catch (e: Exception) { pendingInstall = null; throw e }
+                    }
                 }
-                return true
+                return pending.result.await()
             }
             "uninstallAnimeExtension" -> {
                 val pkg = args["package"] as String
                 require(pkg.startsWith("eu.kanade.tachiyomi.animeextension.") || pkg.startsWith("eu.kanade.tachiyomi.extension."))
-                withContext(Dispatchers.Main) { context.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:$pkg")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                return true
+                val pending = withContext(Dispatchers.Main) {
+                    check(pendingInstall == null && pendingRemoval == null) { "Finish the current Android package operation first" }
+                    val activity = activityBinding?.activity ?: error("Open the app to remove an extension")
+                    PendingRemoval(pkg, CompletableDeferred()).also {
+                        pendingRemoval = it
+                        try {
+                            activity.startActivityForResult(Intent(Intent.ACTION_UNINSTALL_PACKAGE, Uri.parse("package:$pkg")).putExtra(Intent.EXTRA_RETURN_RESULT, true), 6203)
+                        } catch (e: Exception) { pendingRemoval = null; throw e }
+                    }
+                }
+                return pending.result.await()
             }
             "installSourceInternal" -> error("Use the Android package installer")
             "stopHttpServer" -> return null
@@ -168,6 +262,13 @@ class AnymexExtensionRuntimeBridgePlugin : FlutterPlugin {
         val source = loaded.source
         return withTimeout(20_000) {
             when(call.method) {
+                "getPreference", "saveSourcePreference" -> {
+                    val configurable = source as? ConfigurableAnimeSource
+                    if (configurable == null) {
+                        check(call.method == "getPreference") { "Source has no preferences" }
+                        emptyList<Any>()
+                    } else SourcePreferences.execute(context, source.id, call.method, args, configurable::setupPreferenceScreen)
+                }
                 "getPopular" -> page(source.getPopularAnime((args["page"] as Number).toInt()))
                 "getLatestUpdates" -> page(source.getLatestUpdates((args["page"] as Number).toInt()))
                 "search" -> page(source.getSearchAnime((args["page"] as Number).toInt(), args["query"] as String, source.getFilterList()))

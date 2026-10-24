@@ -1,9 +1,13 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart'
     as bridge;
 import 'package:shonenx/core/network/http_client.dart';
 
 final runtimeUpdateProvider = FutureProvider.autoDispose<String?>((ref) async {
+  if (Platform.isAndroid) {
+    return null; // Android runtime ships in signed app updates.
+  }
   if (!bridge.AnymeXRuntimeBridge.controller.isReady.value) return null;
 
   final installedVersion = bridge.AnymeXRuntimeBridge.installedVersion;

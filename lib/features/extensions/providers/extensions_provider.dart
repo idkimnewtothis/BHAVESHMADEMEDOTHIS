@@ -1,3 +1,4 @@
+import 'package:anymex_extension_runtime_bridge/Services/Aniyomi/Models/Source.dart';
 import 'package:anymex_extension_runtime_bridge/Services/Aniyomi/AniyomiExtensions.dart';
 import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart'
     as bridge;
@@ -33,82 +34,80 @@ class ExtensionsController extends Notifier<Set<String>> {
       try {
         final bridgeManager = Get.find<bridge.ExtensionManager>();
         await bridgeManager.refreshExtensions(refreshAvailableSource: true);
-        ref.invalidateAllSources();
+        if (ref.mounted) ref.invalidateAllSources();
       } catch (_) {}
     });
   }
 
-  Future<void> installSource(BuildContext context, UnifiedSource source) async {
-    if (source.bridgeSource == null) return;
-    final manager = bridge.getSourceManager(source.bridgeSource!);
-    if (manager is AniyomiExtensions) {
-      try {
-        final fingerprint = await manager.repositoryFingerprint(
-          source.bridgeSource!,
-        );
-        if (!context.mounted) return;
-        if (!manager.isTrusted(source.bridgeSource!, fingerprint)) {
-          final approved = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Trust this extension repository?'),
-              content: Text(
-                'Extensions run code on your device. Install only from a publisher you trust.\n\n${source.bridgeSource!.repo}\n\nSHA-256 certificate:\n$fingerprint',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Trust and install'),
-                ),
-              ],
-            ),
-          );
-          if (approved != true) return;
-          manager.trustRepository(source.bridgeSource!, fingerprint);
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Cannot verify ${source.name}: $e')),
-          );
-        }
-        return;
-      }
-    }
-    state = {...state, source.id};
+  Future<bool> _trust(BuildContext context, bridge.Source source) async {
+    final manager = bridge.getSourceManager(source);
+    if (manager is! AniyomiExtensions) return true;
+    final fingerprint = await manager.repositoryFingerprint(source);
+    if (!context.mounted || !ref.mounted) return false;
+    if (manager.isTrusted(source, fingerprint)) return true;
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Trust this extension repository?'),
+        content: SingleChildScrollView(
+          child: Text(
+            'Extensions run code on your device. Install only from a publisher you trust.\n\n${source.repo}\n\nSHA-256 certificate:\n$fingerprint',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Trust and install'),
+          ),
+        ],
+      ),
+    );
+    if (approved != true) return false;
+    manager.trustRepository(source, fingerprint);
+    return true;
+  }
+
+  Future<bool> _install(
+    BuildContext context,
+    bridge.Source source,
+    String stateId,
+  ) async {
+    if (state.contains(stateId)) return false;
+    state = {...state, stateId};
     try {
-      await bridge
-          .getSourceManager(source.bridgeSource!)
-          .installSource(source.bridgeSource!);
-      ref.invalidateAllSources();
+      if (!await _trust(context, source)) return false;
+      await bridge.getSourceManager(source).installSource(source);
+      await Get.find<bridge.ExtensionManager>().refreshManagerType(
+        bridge.getSourceManager(source).id,
+        source.itemType ?? bridge.ItemType.anime,
+        refreshAvailableSource: false,
+      );
+      if (ref.mounted) ref.invalidateAllSources();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Confirm installation of ${source.name} in Android, then refresh the store.',
-            ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            behavior: SnackBarBehavior.floating,
-          ),
+          SnackBar(content: Text('${source.name} installed and refreshed')),
         );
       }
+      return true;
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to install ${source.name}: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
+          SnackBar(content: Text('Could not install ${source.name}: $e')),
         );
       }
+      return false;
     } finally {
-      state = {...state}..remove(source.id);
+      if (ref.mounted) state = {...state}..remove(stateId);
     }
+  }
+
+  Future<void> installSource(BuildContext context, UnifiedSource source) async {
+    final extension = source.bridgeSource;
+    if (extension != null) await _install(context, extension, source.id);
   }
 
   Future<void> installVariantGroup(
@@ -116,40 +115,18 @@ class ExtensionsController extends Notifier<Set<String>> {
     String name,
     List<UnifiedSource> groupSources,
   ) async {
-    final ids = groupSources.map((s) => s.id).toSet();
-    state = {...state, ...ids, name};
-    try {
-      for (final source in groupSources) {
-        if (source.bridgeSource != null) {
-          await bridge
-              .getSourceManager(source.bridgeSource!)
-              .installSource(source.bridgeSource!);
-        }
+    final packages = <String>{};
+    for (final variant in groupSources) {
+      final source = variant.bridgeSource;
+      if (source == null ||
+          !packages.add(
+            source is ASource ? source.pkgName ?? variant.id : variant.id,
+          )) {
+        continue;
       }
-      ref.invalidateAllSources();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Installed all variants of $name!'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      if (!context.mounted || !await _install(context, source, variant.id)) {
+        break;
       }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to install variants of $name: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      state = {...state}
-        ..removeAll(ids)
-        ..remove(name);
     }
   }
 
@@ -180,26 +157,36 @@ class ExtensionsController extends Notifier<Set<String>> {
               .where((e) => ids.contains(e.id) || (e.name ?? 'N/A') == name)
               .toList();
 
-          await Future.wait(
-            targetExts.map(
-              (e) => bridge.getSourceManager(e).uninstallSource(e),
-            ),
-          );
-
-          ref.invalidateAllSources();
+          final packages = <String>{};
+          for (final extension in targetExts) {
+            final package = extension is ASource
+                ? extension.pkgName ?? extension.uniqueId
+                : extension.uniqueId;
+            if (!packages.add(package)) continue;
+            await bridge.getSourceManager(extension).uninstallSource(extension);
+          }
+          await bridgeManager.refreshInstalledExtensions();
+          if (ref.mounted) ref.invalidateAllSources();
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Uninstalled $name'),
+                content: Text('$name removed'),
                 behavior: SnackBarBehavior.floating,
               ),
             );
           }
-        } catch (_) {
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Could not uninstall extension: $e')),
+            );
+          }
         } finally {
-          state = {...state}
-            ..removeAll(ids)
-            ..remove(name);
+          if (ref.mounted) {
+            state = {...state}
+              ..removeAll(ids)
+              ..remove(name);
+          }
         }
       },
     );
@@ -232,19 +219,24 @@ class ExtensionsController extends Notifier<Set<String>> {
           };
           final extSource = installed.firstWhere((e) => e.id == source.id);
           await bridge.getSourceManager(extSource).uninstallSource(extSource);
-
-          ref.invalidateAllSources();
+          await bridgeManager.refreshInstalledExtensions();
+          if (ref.mounted) ref.invalidateAllSources();
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('$displayName uninstalled'),
+                content: Text('$displayName removed'),
                 behavior: SnackBarBehavior.floating,
               ),
             );
           }
-        } catch (_) {
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Could not uninstall extension: $e')),
+            );
+          }
         } finally {
-          state = {...state}..remove(source.id);
+          if (ref.mounted) state = {...state}..remove(source.id);
         }
       },
     );
@@ -269,71 +261,7 @@ class ExtensionsController extends Notifier<Set<String>> {
       } catch (_) {}
     }
     if (extSource == null) return;
-    final manager = bridge.getSourceManager(source.bridgeSource!);
-    if (manager is AniyomiExtensions) {
-      try {
-        final fingerprint = await manager.repositoryFingerprint(
-          source.bridgeSource!,
-        );
-        if (!context.mounted) return;
-        if (!manager.isTrusted(source.bridgeSource!, fingerprint)) {
-          final approved = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Trust this extension repository?'),
-              content: Text(
-                'Extensions run code on your device. Install only from a publisher you trust.\n\n${source.bridgeSource!.repo}\n\nSHA-256 certificate:\n$fingerprint',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Trust and install'),
-                ),
-              ],
-            ),
-          );
-          if (approved != true) return;
-          manager.trustRepository(source.bridgeSource!, fingerprint);
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Cannot verify ${source.name}: $e')),
-          );
-        }
-        return;
-      }
-    }
-    state = {...state, source.id};
-    try {
-      await bridge.getSourceManager(extSource).updateSource(extSource);
-      ref.invalidateAllSources();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${source.name} updated successfully!'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update ${source.name}: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      state = {...state}..remove(source.id);
-    }
+    await _install(context, extSource, source.id);
   }
 
   Future<void> updateVariantGroup(
@@ -341,52 +269,48 @@ class ExtensionsController extends Notifier<Set<String>> {
     String name,
     MediaType type,
   ) async {
-    state = {...state, name};
-    try {
-      final bridgeManager = Get.find<bridge.ExtensionManager>();
-      final installed = switch (type) {
-        MediaType.ANIME => bridgeManager.installedAnimeExtensions,
-        MediaType.MANGA => bridgeManager.installedMangaExtensions,
-        MediaType.NOVEL => bridgeManager.installedNovelExtensions,
-        _ => bridgeManager.installedAnimeExtensions,
-      };
-      final variants = installed
-          .where((e) => (e.name ?? 'N/A') == name && (e.hasUpdate ?? false))
-          .toList();
-
-      await Future.wait(
-        variants.map((e) => bridge.getSourceManager(e).updateSource(e)),
-      );
-
-      ref.invalidateAllSources();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Updated all variants of $name'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+    final manager = Get.find<bridge.ExtensionManager>();
+    final installed = type == MediaType.MANGA
+        ? manager.installedMangaExtensions
+        : manager.installedAnimeExtensions;
+    final variants = installed
+        .where((e) => e.name == name && (e.hasUpdate ?? false))
+        .toList();
+    final packages = <String>{};
+    for (final source in variants) {
+      if (!packages.add(
+        source is ASource ? source.pkgName ?? source.uniqueId : source.uniqueId,
+      )) {
+        continue;
       }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update $name: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      if (!context.mounted ||
+          !await _install(context, source, source.id ?? source.uniqueId)) {
+        break;
       }
-    } finally {
-      state = {...state}..remove(name);
     }
   }
 
   Future<void> updateAllSources(BuildContext context) async {
     try {
       final bridgeManager = Get.find<bridge.ExtensionManager>();
-      await bridgeManager.updateAll();
+      final packages = <String>{};
+      for (final source in [
+        ...bridgeManager.installedAnimeExtensions,
+        ...bridgeManager.installedMangaExtensions,
+      ]) {
+        if (!(source.hasUpdate ?? false)) continue;
+        if (!packages.add(
+          source is ASource
+              ? source.pkgName ?? source.uniqueId
+              : source.uniqueId,
+        )) {
+          continue;
+        }
+        if (!context.mounted ||
+            !await _install(context, source, source.id ?? source.uniqueId)) {
+          return;
+        }
+      }
       ref.invalidate(availableAnimeSourcesProvider);
       ref.invalidate(availableMangaSourcesProvider);
       ref.invalidate(availableNovelSourcesProvider);
@@ -546,9 +470,16 @@ class ExtensionsService {
         _ => bridgeManager.installedAnimeExtensions,
       };
       final installedIds = installed.map((e) => e.id ?? '').toSet();
+      final installedPackages = installed
+          .whereType<ASource>()
+          .map((e) => e.pkgName)
+          .toSet();
 
       final uninstalledAvailable = available.where((s) {
-        if (installedIds.contains(s.id)) return false;
+        if (installedIds.contains(s.id) ||
+            (s is ASource && installedPackages.contains(s.pkgName))) {
+          return false;
+        }
         final mId = (s.managerId ?? bridge.getSourceManager(s).id).replaceAll(
           '-desktop',
           '',
@@ -674,12 +605,6 @@ class ExtensionsService {
         if (allVariant != null) {
           groupLang = allVariant.lang!;
         }
-
-        sources.removeWhere(
-          (s) =>
-              s.lang?.toLowerCase() == 'all' ||
-              s.lang?.toLowerCase() == 'multi',
-        );
       } else {
         groupLang = sources.first.lang ?? 'All';
       }

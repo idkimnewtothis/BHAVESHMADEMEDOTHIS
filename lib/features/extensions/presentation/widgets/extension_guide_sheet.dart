@@ -57,7 +57,7 @@ class ExtensionGuideSheet extends ConsumerWidget {
               stepNumber: '1',
               title: 'Add Repositories & Install',
               description:
-                  'Add repository URLs to discover and install external extensions from supported runtime engines (Aniyomi anime APKs).',
+                  'Add repository URLs to discover and install external extensions from supported runtime engines (Aniyomi anime and Mihon manga APKs).',
               icon: Icons.add_circle_outline_rounded,
               roundness: roundness,
             ),
@@ -155,7 +155,7 @@ class ExtensionGuideSheet extends ConsumerWidget {
                   const SizedBox(height: 2),
                   Text(
                     isRuntimeReady
-                        ? 'External engines (Aniyomi anime APKs) are connected via runtime bridge.'
+                        ? 'External engines (Aniyomi anime and Mihon manga APKs) are connected via runtime bridge.'
                         : 'Set up the runtime bridge to enable external extension engines.',
                     style: textTheme.labelSmall?.copyWith(
                       color: cs.onSurfaceVariant,

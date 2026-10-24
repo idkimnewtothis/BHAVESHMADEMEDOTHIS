@@ -371,6 +371,7 @@ class AnymeXRuntimeBridge {
 
 
   static String get installedVersion {
+    if (Platform.isAndroid) return '2.1.0';
     if (!isPluginInstalled) return '';
     return _cachedVersion;
   }
@@ -381,6 +382,7 @@ class AnymeXRuntimeBridge {
   }
 
   static bool get isPluginInstalled {
+    if (Platform.isAndroid) return controller.isReady.value;
     if (_cachedBridgePath == null) return false;
     final bridgeFile = File(_cachedBridgePath!);
     if (!bridgeFile.existsSync()) return false;

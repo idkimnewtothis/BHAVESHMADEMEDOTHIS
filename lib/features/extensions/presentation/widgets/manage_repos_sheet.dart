@@ -39,57 +39,17 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
   @override
   void initState() {
     super.initState();
-    if (widget.autoAddManager != null &&
-        [
-          'aniyomi',
-          'mihon',
-          'mangayomi',
-          'cloudstream',
-          'kotatsu',
-          'sora',
-        ].contains(widget.autoAddManager)) {
-      _selectedEngineId = widget.autoAddManager!;
-    } else if (widget.autoAddUrl != null) {
-      final lower = widget.autoAddUrl!.toLowerCase();
-      if (lower.contains('cloudstream')) {
-        _selectedEngineId = 'cloudstream';
-      } else if (lower.contains('kotatsu')) {
-        _selectedEngineId = 'kotatsu';
-      } else if (lower.contains('sora')) {
-        _selectedEngineId = 'sora';
-      } else if (lower.contains('mangayomi')) {
-        _selectedEngineId = 'mangayomi';
-      } else {
-        _selectedEngineId =
-            widget.managerId?.replaceAll('-desktop', '') ?? 'aniyomi';
-      }
-    } else {
-      _selectedEngineId =
-          widget.managerId?.replaceAll('-desktop', '') ?? 'aniyomi';
-    }
-
-    if (![
-      'aniyomi',
-      'mihon',
-      'mangayomi',
-      'cloudstream',
-      'kotatsu',
-      'sora',
-    ].contains(_selectedEngineId)) {
+    _selectedEngineId =
+        widget.autoAddManager ??
+        widget.managerId?.replaceAll('-desktop', '') ??
+        'aniyomi';
+    if (!{'aniyomi', 'mihon'}.contains(_selectedEngineId)) {
       _selectedEngineId = 'aniyomi';
     }
-
-    if (widget.autoAddType != null &&
-        widget.autoAddType!.toLowerCase() == 'manga') {
-      _selectedType = bridge.ItemType.manga;
-    } else if (widget.autoAddType != null &&
-        widget.autoAddType!.toLowerCase() == 'anime') {
-      _selectedType = bridge.ItemType.anime;
-    } else if (_selectedEngineId == 'mihon') {
-      _selectedType = bridge.ItemType.manga;
-    } else {
-      _selectedType = bridge.ItemType.anime;
-    }
+    if (widget.autoAddType == 'manga') _selectedEngineId = 'mihon';
+    _selectedType = _selectedEngineId == 'mihon'
+        ? bridge.ItemType.manga
+        : bridge.ItemType.anime;
 
     _checkClipboard();
 
@@ -465,6 +425,38 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
             ),
             const SizedBox(height: 18),
 
+            Wrap(
+              spacing: 8,
+              children: [
+                ActionChip(
+                  label: const Text('Keiyoushi manga'),
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          setState(() {
+                            _selectedEngineId = 'mihon';
+                            _selectedType = bridge.ItemType.manga;
+                            _controller.text =
+                                'https://github.com/keiyoushi/extensions/raw/repo/index.pb';
+                          });
+                        },
+                ),
+                ActionChip(
+                  label: const Text('Yūzōnō anime'),
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          setState(() {
+                            _selectedEngineId = 'aniyomi';
+                            _selectedType = bridge.ItemType.anime;
+                            _controller.text =
+                                'https://raw.githubusercontent.com/yuzono/anime-repo/repo/index.min.json';
+                          });
+                        },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             // Section 2: Repository URL
             _buildSectionHeader(context, 'REPOSITORY URL'),
             const SizedBox(height: 2),
@@ -771,7 +763,7 @@ class _ManageReposSheetState extends ConsumerState<ManageReposSheet> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Add repository URLs above to discover and install extensions for anime, manga, and novels.',
+                      'Add a repository above to install anime or manga extensions.',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: cs.onSurfaceVariant,

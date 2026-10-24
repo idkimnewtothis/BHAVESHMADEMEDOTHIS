@@ -17,6 +17,7 @@ android {
     compileSdk = 36
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17"; freeCompilerArgs += ["-Xcontext-receivers"] }
+    testOptions { unitTests.includeAndroidResources = true }
     defaultConfig { minSdk = 26; consumerProguardFiles 'proguard-rules.pro' }
 }
 repositories { google(); mavenCentral(); maven { url 'https://jitpack.io' } }
@@ -32,6 +33,9 @@ tasks.register("verifyPinnedExtensionApi") {
 }
 tasks.named("preBuild") { dependsOn("verifyPinnedExtensionApi") }
 dependencies {
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.robolectric:robolectric:4.16.1"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2"
     // Reference artifact only: never package Stub! bodies or replace host APIs.
     // v17 commit 971ce96e76202bb35432fe71f92553e3ae40d01d; artifact Kotlin metadata 2.4.
     extensionApiReference "com.github.aniyomiorg:extensions-lib:v17@aar"

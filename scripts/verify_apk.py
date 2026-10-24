@@ -2,6 +2,7 @@
 """Verify signed app identity, ARM64 native ELF page alignment and APK structure."""
 import argparse
 import os
+import re
 from pathlib import Path
 import struct
 import subprocess
@@ -29,7 +30,27 @@ def verify_elf(data, name):
         raise ValueError(f'{name}: no loadable ELF segments')
 
 
-def verify(path, app_id, version, tools, certificate):
+def verify_extension_provider(manifest, app_id):
+    """Validate the merged APK, where duplicate provider classes can disappear."""
+    blocks = re.findall(r'E: provider[^\n]*\n((?:[ \t]+A:[^\n]*\n)*)', manifest)
+    expected = f'{app_id}.anime-apks'
+    matched = []
+    for block in blocks:
+        attrs = dict(re.findall(r'android:(\w+)(?:\([^)]*\))?="([^"]*)"', block))
+        if attrs.get('authorities') == expected:
+            matched.append((attrs, block))
+    if len(matched) != 1:
+        raise ValueError('Extension APK FileProvider authority missing or duplicated in merged manifest')
+    attrs, block = matched[0]
+    if attrs.get('name') != 'com.ryan.runtimebridge.ExtensionApkProvider':
+        raise ValueError('Extension APK provider must have a distinct class to avoid manifest merging')
+    if not re.search(r'android:exported[^\n]*\(type 0x12\)0x0(?:\s|$)', block):
+        raise ValueError('Extension APK provider must be explicitly non-exported')
+    if not re.search(r'android:grantUriPermissions[^\n]*\(type 0x12\)0xffffffff(?:\s|$)', block):
+        raise ValueError('Extension APK provider must grant installer URI access')
+
+
+def verify(path, app_id, version, tools, certificate, version_code=3):
     cert = subprocess.check_output([str(tools / 'apksigner'), 'verify', '--verbose', '--print-certs', str(path)], text=True)
     if 'CN=Android Debug' in cert:
         raise ValueError('Debug signing key is not a release key')
@@ -39,8 +60,12 @@ def verify(path, app_id, version, tools, certificate):
     info = subprocess.check_output([str(tools / 'aapt'), 'dump', 'badging', str(path)], text=True)
     if f"name='{app_id}'" not in info.splitlines()[0] or f"versionName='{version}'" not in info.splitlines()[0]:
         raise ValueError('Unexpected app identity or version')
+    if f"versionCode='{version_code}'" not in info.splitlines()[0]:
+        raise ValueError('Unexpected version code; update history must advance')
     if 'application-debuggable' in info:
         raise ValueError('Release APK must not be debuggable')
+    manifest = subprocess.check_output([str(tools / 'aapt'), 'dump', 'xmltree', str(path), 'AndroidManifest.xml'], text=True)
+    verify_extension_provider(manifest, app_id)
     checked = []
     with zipfile.ZipFile(path) as apk:
         if apk.testzip():
@@ -69,8 +94,9 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('apk', type=Path)
     p.add_argument('--application-id', default='io.github.idkimnewtothis.shonenxplus')
-    p.add_argument('--version', default='2.0.0')
+    p.add_argument('--version', default='2.1.0')
+    p.add_argument('--version-code', type=int, default=3)
     p.add_argument('--certificate', default='1e1c683fa4cbee119b96bea3f0a2c7a04a75b38679791cc3cf8a946e6bef5124', help='Expected public signing certificate SHA-256')
     p.add_argument('--build-tools', type=Path, default=Path(os.environ.get('ANDROID_HOME', '')) / 'build-tools/36.0.0')
     a = p.parse_args()
-    verify(a.apk, a.application_id, a.version, a.build_tools, a.certificate)
+    verify(a.apk, a.application_id, a.version, a.build_tools, a.certificate, a.version_code)

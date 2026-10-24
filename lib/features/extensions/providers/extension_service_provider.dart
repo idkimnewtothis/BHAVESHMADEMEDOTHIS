@@ -1,3 +1,4 @@
+import 'package:anymex_extension_runtime_bridge/Services/Aniyomi/RepositoryUrl.dart';
 import 'dart:async';
 
 import 'package:anymex_extension_runtime_bridge/Settings/KvStore.dart';
@@ -46,47 +47,7 @@ class ExtensionAdapter {
   }
 
   static String normalizeRepoUrl(String input, String engineId) {
-    var url = input.trim();
-    if (url.isEmpty) return url;
-
-    // GitHub blob/tree → raw.
-    if (url.startsWith('https://github.com/')) {
-      url = url
-          .replaceFirst(
-            'https://github.com/',
-            'https://raw.githubusercontent.com/',
-          )
-          .replaceFirst('/blob/', '/')
-          .replaceFirst('/tree/', '/');
-    }
-
-    // Ensure scheme.
-    if (!url.startsWith('http://') &&
-        !url.startsWith('https://') &&
-        !url.startsWith('cloudstreamrepo://')) {
-      url = 'https://$url';
-    }
-
-    final lower = url.toLowerCase();
-    final engine = engineId.replaceAll('-desktop', '').toLowerCase();
-
-    if (engine == 'aniyomi' || engine == 'tachiyomi' || engine == 'mihon') {
-      if (!lower.endsWith('.json') &&
-          !lower.endsWith('.pb') &&
-          !lower.endsWith('.pb.gz')) {
-        url = url.endsWith('/') ? '${url}repo.json' : '$url/repo.json';
-      }
-    } else if (engine == 'mangayomi') {
-      if (!lower.endsWith('.json')) {
-        url = url.endsWith('/') ? '${url}index.json' : '$url/index.json';
-      }
-    } else if (engine == 'cloudstream') {
-      if (url.startsWith('cloudstreamrepo://')) {
-        url = url.replaceFirst('cloudstreamrepo://', '');
-      }
-    }
-
-    return url;
+    return RepositoryUrl.normalize(input).toString();
   }
 
   static String extractRepoDisplayName(String url, [String? fallback]) {
@@ -207,7 +168,7 @@ class ExtensionAdapter {
       final name = _getEngineDisplayName(engineId);
       throw Exception(
         '$name engine is not initialized. '
-        'On desktop, please ensure the AnymeX Runtime Host is downloaded and ready.',
+        'Open Runtime support and retry initialization.',
       );
     }
 

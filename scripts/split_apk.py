@@ -87,7 +87,7 @@ def main():
     parser.add_argument('--output', type=Path, help='Parts directory, or reassembled APK in verify mode')
     parser.add_argument('--app', default='ShonenX+')
     parser.add_argument('--slug', default='shonenxplus')
-    parser.add_argument('--version', default='2.0.0')
+    parser.add_argument('--version', default='2.1.0')
     parser.add_argument('--part-size', type=int, default=20_000_000)
     parser.add_argument('--apksigner', default=os.environ.get('APKSIGNER', 'apksigner'))
     args = parser.parse_args()

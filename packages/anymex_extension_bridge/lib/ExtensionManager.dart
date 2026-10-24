@@ -150,21 +150,40 @@ class ExtensionManager extends GetxController {
     }
   }
 
+  Future<void> refreshInstalledExtensions() async {
+    final errors = <String>[];
+    await Future.wait(managers.map((manager) async {
+      for (final type in ItemType.values) {
+        try {
+          await _refreshInstalledForType(manager, type);
+        } catch (e) {
+          errors.add('${manager.name}: $e');
+        }
+      }
+    }));
+    _refreshAllAggregatedLists();
+    if (errors.isNotEmpty) throw StateError(errors.join('\n'));
+  }
+
   Future<void> refreshExtensions({bool refreshAvailableSource = false}) async {
     if (!refreshAvailableSource) {
       _refreshAllAggregatedLists();
       return;
     }
 
-    final futures = <Future>[];
-    for (final manager in managers) {
-      if (manager.supportsAnime) futures.add(manager.fetchAnimeExtensions());
-      if (manager.supportsManga) futures.add(manager.fetchMangaExtensions());
-      if (manager.supportsNovel) futures.add(manager.fetchNovelExtensions());
-    }
-
-    await Future.wait(futures);
+    final errors = <String>[];
+    await Future.wait(managers.map((manager) async {
+      for (final type in ItemType.values) {
+        try {
+          await _refreshInstalledForType(manager, type);
+          await _refreshAvailableForType(manager, type);
+        } catch (e) {
+          errors.add('${manager.name}: $e');
+        }
+      }
+    }));
     _refreshAllAggregatedLists();
+    if (errors.isNotEmpty) throw StateError(errors.join('\n'));
   }
 
   Future<void> refreshManagerType(
@@ -176,16 +195,13 @@ class ExtensionManager extends GetxController {
     final manager = findById(managerId);
     if (manager == null) return;
 
-    final futures = <Future>[];
-
     if (refreshInstalledSource) {
-      futures.add(_refreshInstalledForType(manager, type));
+      await _refreshInstalledForType(manager, type);
     }
     if (refreshAvailableSource) {
-      futures.add(_refreshAvailableForType(manager, type));
+      await _refreshAvailableForType(manager, type);
     }
 
-    await Future.wait(futures);
     _updateAggregatedLists(type);
   }
 

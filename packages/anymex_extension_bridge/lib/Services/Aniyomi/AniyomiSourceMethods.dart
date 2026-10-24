@@ -354,6 +354,7 @@ class AniyomiSourceMethods extends SourceMethods {
   Future<bool> setPreference(SourcePreference pref, dynamic value) async {
     final result = await platform.invokeMethod('saveSourcePreference', {
       'sourceId': source.id,
+      'isAnime': isAnime,
       'key': pref.key,
       'value': value,
     });
