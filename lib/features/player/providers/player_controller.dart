@@ -609,7 +609,9 @@ class PlayerController extends Notifier<PlayerState> {
     VideoServer activeServer,
     List<VideoStream> activeStreams,
   ) async {
-    if (_source == null) return;
+    final source = _source;
+    final generation = _loadGeneration;
+    if (source == null) return;
 
     final otherServers = state.servers
         .where((s) => s.id != activeServer.id)
@@ -619,14 +621,22 @@ class PlayerController extends Notifier<PlayerState> {
     final streamsList = await Future.wait(
       otherServers.map((server) async {
         try {
-          return await _source!.getSources(episodeId, server);
+          return await source
+              .getSources(episodeId, server)
+              .timeout(const Duration(seconds: 15));
         } catch (_) {
           return <VideoStream>[];
         }
       }),
     );
 
-    if (_isDisposed || state.activeEpisode?.id != episodeId) return;
+    if (_isDisposed ||
+        !ref.mounted ||
+        generation != _loadGeneration ||
+        !identical(source, _source) ||
+        state.activeEpisode?.id != episodeId) {
+      return;
+    }
 
     final allServerStreams = <VideoServer, List<VideoStream>>{
       activeServer: activeStreams,
