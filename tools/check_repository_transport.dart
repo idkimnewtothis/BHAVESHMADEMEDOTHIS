@@ -4,10 +4,11 @@ import 'dart:convert';
 import 'package:anymex_extension_runtime_bridge/Services/Aniyomi/RepositoryClient.dart';
 
 Future<void> main(List<String> args) async {
-  if (args.length != 1)
+  if (args.length != 1) {
     throw ArgumentError(
       'Usage: dart run tools/check_repository_transport.dart <download-directory>',
     );
+  }
   final directory = Directory(args.single);
   await directory.create(recursive: true);
   final client = RepositoryClient();

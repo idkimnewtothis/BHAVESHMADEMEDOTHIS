@@ -112,7 +112,8 @@ class RepositoryClient {
   }
 
   Future<void> download(Uri uri, File file,
-      {void Function(int, int?)? onProgress}) async {
+      {void Function(int, int?)? onProgress,
+      Duration totalTimeout = const Duration(minutes: 3)}) async {
     final client = createClient();
     final partial = File('${file.path}.part');
     IOSink? sink;
@@ -147,7 +148,7 @@ class RepositoryClient {
         }
         await partial.rename(file.path);
       })()
-          .timeout(const Duration(minutes: 3));
+          .timeout(totalTimeout);
     } finally {
       client.close();
       await sink?.close();

@@ -1,6 +1,8 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:anymex_extension_runtime_bridge/Services/Aniyomi/RepositoryClient.dart';
+import 'package:flutter/material.dart';
+import 'package:shonenx/features/updates/services/apk_update_download.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -44,6 +46,13 @@ class _AndroidUpdateWidgetState extends State<AndroidUpdateWidget> {
   double _progress = 0.0;
   String _statusMessage = 'Matching device architecture...';
   File? _downloadedFile;
+  http.Client? _downloadClient;
+
+  @override
+  void dispose() {
+    _downloadClient?.close();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -69,6 +78,7 @@ class _AndroidUpdateWidgetState extends State<AndroidUpdateWidget> {
   Future<void> _startDownloadAndInstall() async {
     if (_bestAsset == null || _isDownloading) return;
     widget.onDownloadStarted?.call();
+    if (!mounted) return;
 
     setState(() {
       _isDownloading = true;
@@ -76,39 +86,32 @@ class _AndroidUpdateWidgetState extends State<AndroidUpdateWidget> {
       _statusMessage = 'Starting download...';
     });
 
+    final client = http.Client();
+    _downloadClient = client;
     try {
-      final dir =
-          (await getExternalCacheDirectories())?.first ??
-          await getExternalStorageDirectory() ??
-          await getTemporaryDirectory();
-
-      final file = File('${dir.path}/${_bestAsset!.name}');
-      final request = http.Request('GET', Uri.parse(_bestAsset!.downloadUrl));
-      request.headers['User-Agent'] = 'ShonenX+-App';
-
-      final response = await http.Client().send(request);
-      final totalBytes = response.contentLength ?? _bestAsset!.size;
-      int receivedBytes = 0;
-
-      final sink = file.openWrite();
-
-      await response.stream.forEach((chunk) {
-        sink.add(chunk);
-        receivedBytes += chunk.length;
-        if (totalBytes > 0 && mounted) {
+      final dir = Directory(
+        '${(await getTemporaryDirectory()).path}/app-updates',
+      );
+      if (!mounted) return;
+      final watch = Stopwatch()..start();
+      var lastUpdate = -100;
+      final file = await downloadUpdateApk(
+        _bestAsset!,
+        dir,
+        client: RepositoryClient(createClient: () => client),
+        onProgress: (received, total) {
+          if (!mounted || watch.elapsedMilliseconds - lastUpdate < 100) return;
+          lastUpdate = watch.elapsedMilliseconds;
           setState(() {
-            _progress = receivedBytes / totalBytes;
-            final mbReceived = (receivedBytes / (1024 * 1024)).toStringAsFixed(
-              1,
-            );
-            final mbTotal = (totalBytes / (1024 * 1024)).toStringAsFixed(1);
-            _statusMessage = 'Downloading: $mbReceived MB / $mbTotal MB';
+            _progress = total != null && total > 0
+                ? (received / total).clamp(0, 1)
+                : 0;
+            _statusMessage =
+                'Downloading: ${(received / (1024 * 1024)).toStringAsFixed(1)} MB';
           });
-        }
-      });
-
-      await sink.flush();
-      await sink.close();
+        },
+      );
+      if (!mounted) return;
 
       if (mounted) {
         setState(() {
@@ -127,6 +130,9 @@ class _AndroidUpdateWidgetState extends State<AndroidUpdateWidget> {
           _statusMessage = 'Download failed: $e';
         });
       }
+    } finally {
+      client.close();
+      if (identical(_downloadClient, client)) _downloadClient = null;
     }
   }
 
@@ -147,6 +153,7 @@ class _AndroidUpdateWidgetState extends State<AndroidUpdateWidget> {
           }
         }
       }
+      if (!mounted) return;
       final result = await OpenFile.open(file.path);
       if (mounted && result.type != ResultType.done) {
         setState(() {
