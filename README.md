@@ -4,6 +4,8 @@ An independent GPL-3.0 Android app based on ShonenX. Version **2.0.0+2**, applic
 
 ## Install on a phone
 
+[Download ShonenX+2.0.0](https://github.com/idkimnewtothis/BHAVESHMADEMEDOTHIS/releases/tag/v2.0.0): signed ARM64 APK or verified split files. This is a prerelease; device limitations are listed below.
+
 Release delivery consists of `apk-joiner.html`, every `shonenxplus-2.0.0.part-NNN.bin`, and `shonenxplus-2.0.0.manifest.json`. The parts come from the signed ARM64 release APK. The joiner validates part sizes and SHA-256 hashes, then the assembled APK hash, offline.
 
 1. Download apk-joiner.html, every part, and the manifest.
@@ -40,7 +42,7 @@ Enable 1DM in Download Settings. ShonenX+ persists each handoff rather than trea
 
 In **Downloads**, tap **Select 1DM folder and sync** and grant access to the specific directory where 1DM writes its completed files. Android may prevent selecting the Downloads root; select 1DM's subfolder. Keep the filenames supplied by ShonenX+. The app scans on resume and every 30 seconds while running, imports stable completed files into app storage, and attaches matching subtitles to the player. It does not delete the originals. Duplicate filenames in the granted tree are rejected rather than guessed.
 
-1DM's intents, actual completion/rename behavior, and phone permission flows need device validation. There is no verified completion callback API. Files still being written, renamed files, or files outside the granted folder cannot be reliably auto-imported. External download sync is not claimed to run while ShonenX+ is force-stopped.
+Use 1DM itself to pause or cancel external transfers; ShonenX+ queue controls govern its own jobs. 1DM's intents, actual completion/rename behavior, and phone permission flows need device validation. There is no verified completion callback API. Files still being written, renamed files, or files outside the granted folder cannot be reliably auto-imported. External download sync is not claimed to run while ShonenX+ is force-stopped.
 
 ## Build and signing
 
