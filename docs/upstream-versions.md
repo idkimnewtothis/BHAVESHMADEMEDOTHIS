@@ -48,3 +48,14 @@ Full recursive submodule initialization fails for `lib/source_engine/inbuilt_sou
 - APK signer from repo.json: **9add655a78e96c4ec7a53ef89dccb557cb5d767489fac5e785d671a5a75d4da2**.
 - Exact host source hashes and update gates: mihon-api-pin.json and upstream-maintenance.md.
 - Direct GitHub commits API returned HTTP403; the repository commit was verified using Git transport instead.
+
+
+## ShonenX+ 2.1 repair audit — 2026-10-24
+
+- Mihon stable `v0.21.2`, commit `9612d955db3165e1578fdf9ff19ca9b7762c4a46`; inspected `SourcePreferencesScreen.kt` and the public source API. Android preferences now use the same `source_<id>` storage namespace, extension defaults, and change listeners.
+- Keiyoushi repo branch `6d666b4f2beba067f8aa0ca98946cc6cb7fc589d`; current protobuf index contains 1,426 entries. The exact GitHub `/raw/repo/index.pb` URL is supported. Manga source field remains8; APK fingerprint comes from embedded protobuf or repo.json.
+- Yuzono repo branch `d79665e2915347faf7af9db47d11d3001c33fd06`; live index contains 250 entries. AnimeKai16.9, AnimePahe16.55, KickAssAnime14.62 and WCOStream14.15 were downloaded via the production transport and certificate checked.
+- Aniyomi/extensions-lib pins remain as recorded above (v17 reference artifact checksum verified by Gradle); supported host versions remain14,16,17. Manga host supports1.4,1.6.
+- MovieBox HTTP contract: `solo12345689/moviebox-internal-api` commit `e1dfbe5b2bf8c9559fa7631cb8a35172d651fe85`, `moviebox_api_server.py`, dashboard API client and category documentation. Independent client implementation; no upstream server implementation, embedded credentials, or signing material copied. No license file was found in the referenced repository. Series category 19 follows its documented Western TV mapping; category 3 is education/kids and is not used for series.
+
+The MovieBox GitHub URL is a server code repository, not a hosted API endpoint. Configure a user-operated HTTPS server through MovieBox UI. Catalog parsing is tested with synthetic responses; live server compatibility requires a reachable configured endpoint.

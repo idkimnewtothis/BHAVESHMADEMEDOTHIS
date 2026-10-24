@@ -1,3 +1,15 @@
+# 2.1.0 — 2026-10-24
+
+- Repair exact Keiyoushi protobuf and Yuzono JSON repository URLs, HTTPS redirects, download streaming, and repository diagnostics.
+- Fix the Android manifest collision that removed the extension installer FileProvider authority. Add an APK-level verification gate.
+- Await Android install/removal confirmations; preserve trust checks for grouped installs and updates, refresh actual installed sources, and avoid duplicate package operations.
+- Validate and stream app-update APKs with isolated temporary files, bounded timeouts, size checks and disposal safety.
+- Expose bundled Mihon/Aniyomi runtime status instead of a nonfunctional separate Android runtime download.
+- Implement source preferences with extension defaults and change listeners; refresh source maps atomically.
+- Add retry and readable errors for failed offline/online reader pages. Guard delayed subtitle results when switching sources.
+- Add configurable MovieBox UI catalogs, search, pagination and source integration using an independently implemented HTTP client.
+- Add repository-to-installer regression tests, MovieBox contract tests, reader retry coverage, and synthetic download endurance validation.
+
 # ShonenX+ 2.0.0 — 2026-10-24
 
 - New application identity and private signing key; independent installation.
